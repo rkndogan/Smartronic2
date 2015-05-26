@@ -17,7 +17,7 @@ public class Forgot extends ActionBarActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present. burayý da sil
+        // Inflate the menu; this adds items to the action bar if it is present. burayý da sil bunu da
         getMenuInflater().inflate(R.menu.menu_forgot, menu);
         return true;
     }
