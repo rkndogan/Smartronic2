@@ -4,9 +4,12 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.util.Base64;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -18,6 +21,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
@@ -27,6 +33,7 @@ import java.net.URLEncoder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 
@@ -44,10 +51,28 @@ public class MainActivity extends ActionBarActivity {
     //String[] Logout = {"Yes", "No"};
     //String[] Home = {};
 
-    private static final String URL = "http://ragip.info/Controller/index.php";
+    //private static String URL = "https://vera-us-oem-autha.mios.com/autha/auth/username/";
 
-    JSONObject json = new JSONObject();
-    JSONObject json2 = new JSONObject();
+    //JSONObject json = new JSONObject();
+    //JSONObject json2 = new JSONObject();
+
+    // Followed URL's will be used when posting data to mios vera eben var mı?
+
+    private static String URLLogin = "https://vera-us-oem-autha.mios.com/autha/auth/username/";
+    private static String getTheDevices = "https://vera-us-oem-authd.mios.com/locator/locator";
+
+    /*private static final String URLRegister = "http://example_server/autha/auth/username";
+    private static final String TokenUrl = "http://example_server/info/session/token";*/
+
+
+    // "+ x + ? will be appended to URLLogin string."
+
+    // TokenUrl will be used to check if identity tokens are still valid.
+
+    /*JSONObject json = new JSONObject();
+    JSONObject json2 = new JSONObject();*/
+
+    String MyPREFERENCES = "file.txt";
 
 
     @Override
@@ -163,34 +188,35 @@ public class MainActivity extends ActionBarActivity {
 
             //String response = "";
 
-            HashMap<String, String> postData = new HashMap<>();
+            LinkedHashMap<String, String> postData = new LinkedHashMap<>();
 
             try {
-                URL url = new URL(URL);
-
-                URLConnection conn = url.openConnection();
-                conn.setDoOutput(true);
-
-                OutputStreamWriter writer = new OutputStreamWriter(conn.getOutputStream());
-
                 // SHA-1 Hashed Password to go to vera
                 String hashedPassword = hashThePassword(password);
 
                 // encoded username will be posted to mios vera
                 String encodedUsername = URLEncoder.encode(username, "utf-8");
+                //String questionMark = "?";
 
-                System.out.println(hashedPassword);
-                System.out.println(encodedUsername);
+                URLLogin = URLLogin + encodedUsername;
+                System.out.println(URLLogin);
 
-                postData.put("username", encodedUsername);
-                postData.put("Password", hashedPassword);
-                //postData.put("PK_Oem", "");
-                //postData.put("AppKey", "");
+                URL url = new URL(URLLogin);
 
+                URLConnection conn = url.openConnection();
+                conn.setDoOutput(true);
 
-                //writer.write(getPostDataString(postData));
+                OutputStreamWriter writer = new OutputStreamWriter(conn.getOutputStream());
+                //System.out.println(hashedPassword);
+                //System.out.println(encodedUsername);
+
+                postData.put("SHA1Password", hashedPassword);
+                postData.put("PK_Oem", "1");
+                postData.put("AppKey", "2");
+
+                writer.write(getPostDataString(postData));
                 //System.out.println(json.toString());
-                writer.write("json2=" + json2.toString());
+                //writer.write("json2=" + json2.toString());
                 writer.flush();
 
                 String line;
@@ -200,7 +226,8 @@ public class MainActivity extends ActionBarActivity {
 
                 while ((line = reader.readLine()) != null) {
                     text += line + "/n";
-                    printResponse(text);
+                    //printResponse(text);
+                    getEncodedStringAndDecode(text);
                 }
                 writer.close();
                 reader.close();
@@ -211,7 +238,7 @@ public class MainActivity extends ActionBarActivity {
             return null;
         }
 
-        private String getPostDataString(HashMap<String, String> params) throws UnsupportedEncodingException {
+        private String getPostDataString(LinkedHashMap<String, String> params) throws UnsupportedEncodingException {
             StringBuilder result = new StringBuilder();
             boolean first = true;
             for (Map.Entry<String, String> entry : params.entrySet()) {
@@ -223,17 +250,17 @@ public class MainActivity extends ActionBarActivity {
                 result.append(URLEncoder.encode(entry.getKey(), "UTF-8"));
                 result.append("=");
                 result.append(URLEncoder.encode(entry.getValue(), "UTF-8"));
-                System.out.println(result);
             }
-
+            //System.out.println(result);
             return result.toString();
         }
 
         public void printResponse(String line) {
             try {
                 JSONObject jsonArray = new JSONObject(line);
-                System.out.println(jsonArray.get("key"));
+                System.out.println(jsonArray.get("PK_Account"));
                 System.out.println(jsonArray);
+                String PK_Account = (String) jsonArray.get("PK_Account");
             } catch (JSONException e) {
                 e.printStackTrace();
             }
@@ -251,7 +278,69 @@ public class MainActivity extends ActionBarActivity {
             return sb.toString();
         }
 
+        /*public void writeToFile(String line) throws IOException {
+
+            try {
+                OutputStreamWriter outputStreamWriter = new OutputStreamWriter(openFileOutput("anan.txt", Context.MODE_PRIVATE));
+                outputStreamWriter.write(line);
+                outputStreamWriter.close();
+            } catch (IOException e) {
+                Log.e("Exception", "File write failed: " + e.toString());
+            }
+
+            String ret = "";
+
+            try {
+                InputStream inputStream = openFileInput("config.txt");
+
+                if (inputStream != null) {
+                    InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+                    BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+                    String receiveString = "";
+                    StringBuilder stringBuilder = new StringBuilder();
+
+                    while ((receiveString = bufferedReader.readLine()) != null) {
+                        stringBuilder.append(receiveString);
+                    }
+
+                    inputStream.close();
+                    ret = stringBuilder.toString();
+                    System.out.println(ret);
+                }
+            } catch (FileNotFoundException e) {
+                Log.e("login activity", "File not found: " + e.toString());
+            } catch (IOException e) {
+                Log.e("login activity", "Can not read file: " + e.toString());
+            }
+
+        }
+
+        public void writeToFileWithSharedPreferences(String line) {
+            SharedPreferences sharedpreferences = getSharedPreferences(MyPREFERENCES, Context.MODE_PRIVATE);
+            SharedPreferences.Editor editor = sharedpreferences.edit();
+            editor.putString("key", line);
+            editor.commit();
+
+            SharedPreferences settings = getSharedPreferences(MyPREFERENCES, 0);
+            String preferencesString = settings.getString("key", null);
+            System.out.println(preferencesString);
+
+        }*/
+
+        public void getEncodedStringAndDecode (String encodedResponse) {
+            byte[] decodedBytes = Base64.decode(encodedResponse,Base64.DEFAULT);
+            String decodedString = new String(decodedBytes);
+            System.out.println("decodedBytes " + decodedString);
+            printResponse(decodedString);
+        }
+
+        public void theGatewaysAssignedToAccount (String url) {
+
+        }
+
 
     }
 
+
 }
+
