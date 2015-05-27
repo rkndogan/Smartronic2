@@ -37,7 +37,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 
-public class MainActivity extends ActionBarActivity {
+public  class MainActivity extends ActionBarActivity {
 
     EditText ed1;
     EditText ed2;
@@ -48,6 +48,8 @@ public class MainActivity extends ActionBarActivity {
     String errorFormat = "";
     Boolean error = false;
     String selectedOption;
+    Context context;
+
     //String[] Logout = {"Yes", "No"};
     //String[] Home = {};
 
@@ -56,11 +58,11 @@ public class MainActivity extends ActionBarActivity {
     //JSONObject json = new JSONObject();
     //JSONObject json2 = new JSONObject();
 
-    // Followed URL's will be used when posting data to mios vera eben var mÄ±?
+    // Followed URL's will be used when posting data to mios vera eben var mý?
 
     private static String URLLogin = "https://vera-us-oem-autha.mios.com/autha/auth/username/";
     private static String getTheDevices = "https://vera-us-oem-authd.mios.com/locator/locator";
-
+    public static String CommandURL="http://ragip.info/Controller/index_melih.php";
     /*private static final String URLRegister = "http://example_server/autha/auth/username";
     private static final String TokenUrl = "http://example_server/info/session/token";*/
 
@@ -182,6 +184,12 @@ public class MainActivity extends ActionBarActivity {
     }
 
     class LoginCheck extends AsyncTask<Void, Void, Void> {
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+
+            new Polling(getApplicationContext()).execute();
+        }
 
         @Override
         protected Void doInBackground(Void... params) {
@@ -278,6 +286,10 @@ public class MainActivity extends ActionBarActivity {
             return sb.toString();
         }
 
+        public void UpdateUI (JSONObject json){
+
+
+        }
         /*public void writeToFile(String line) throws IOException {
 
             try {
