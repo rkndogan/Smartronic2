@@ -1,6 +1,7 @@
 package smarthouse.smartronic2;
 
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -13,10 +14,13 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ListView;
 import android.widget.Toast;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -36,20 +40,18 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-
-public  class MainActivity extends ActionBarActivity {
+public class MainActivity extends ActionBarActivity {
 
     EditText ed1;
     EditText ed2;
     Button loginButton;
-    HashMap<String, String> user = new HashMap<>();
+    LinkedHashMap<String, String> URLMap = new LinkedHashMap<>();
     String username, password;
     String salt = "oZ7QE6LcLJp6fiWzdqZc";
     String errorFormat = "";
     Boolean error = false;
     String selectedOption;
     Context context;
-
     //String[] Logout = {"Yes", "No"};
     //String[] Home = {};
 
@@ -58,14 +60,16 @@ public  class MainActivity extends ActionBarActivity {
     //JSONObject json = new JSONObject();
     //JSONObject json2 = new JSONObject();
 
-    // Followed URL's will be used when posting data to mios vera eben var mý?
+    // Followed URL's will be used when posting data to mios vera eben var mï¿½?
 
     private static String URLLogin = "https://vera-us-oem-autha.mios.com/autha/auth/username/";
-    private static String getTheDevices = "https://vera-us-oem-authd.mios.com/locator/locator";
-    public static String CommandURL="http://ragip.info/Controller/index_melih.php";
+    private static String getTheDevices = "https://vera-us-oem-authd.mios.com/locator/locator/";
+    private static String requestToGateway = "https://vera-us-oem-device11.mios.com/device/device/device/";
+
+    public static String CommandURL = "http://ragip.info/Controller/index_melih.php";
+
     /*private static final String URLRegister = "http://example_server/autha/auth/username";
     private static final String TokenUrl = "http://example_server/info/session/token";*/
-
 
     // "+ x + ? will be appended to URLLogin string."
 
@@ -74,37 +78,19 @@ public  class MainActivity extends ActionBarActivity {
     /*JSONObject json = new JSONObject();
     JSONObject json2 = new JSONObject();*/
 
-    String MyPREFERENCES = "file.txt";
-
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        URLMap.put("1", URLLogin);
+        URLMap.put("2", getTheDevices);
+        URLMap.put("3", requestToGateway);
+
         loginButton = (Button) findViewById(R.id.LoginButton);
         ed1 = (EditText) findViewById(R.id.UsernameEditText);
         ed2 = (EditText) findViewById(R.id.PasswordEditText);
 
-        /*try {
-            json.put("PK_Device", 1234);
-            json.put("MacAddress", "00:26:b8:71:ac:5e");
-            json.put("PK_DeviceType", 1);
-            json.put("PK_DeviceSubType", 2);
-            json.put("Server_Device", "us-device11.mios.com");
-            json.put("Server_Event", "us-event11.mios.com");
-            json.put("Server_Account", "us-account11.mios.com");
-            json.put("InternalIP", "192.168.8.60");
-            json.put("LastAliveReported", "date time format");
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        try {
-            json2.accumulate("Devices", String.valueOf(json));
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }*/
 
         loginButton.setOnClickListener(new View.OnClickListener() {
 
@@ -184,6 +170,9 @@ public  class MainActivity extends ActionBarActivity {
     }
 
     class LoginCheck extends AsyncTask<Void, Void, Void> {
+        String itemValue;
+        ListView listView;
+
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
@@ -204,75 +193,54 @@ public  class MainActivity extends ActionBarActivity {
 
                 // encoded username will be posted to mios vera
                 String encodedUsername = URLEncoder.encode(username, "utf-8");
-                //String questionMark = "?";
 
-                URLLogin = URLLogin + encodedUsername;
+                URLMap.put("1", URLMap.get("1") + encodedUsername);
+                //URLLogin = URLLogin + encodedUsername;
                 System.out.println(URLLogin);
 
-                URL url = new URL(URLLogin);
+                //URL url = new URL(URLLogin);
 
-                URLConnection conn = url.openConnection();
-                conn.setDoOutput(true);
+                //URLConnection conn = url.openConnection();
+                //conn.setDoOutput(true);
 
-                OutputStreamWriter writer = new OutputStreamWriter(conn.getOutputStream());
-                //System.out.println(hashedPassword);
-                //System.out.println(encodedUsername);
+                //OutputStreamWriter writer = new OutputStreamWriter(conn.getOutputStream());
 
                 postData.put("SHA1Password", hashedPassword);
                 postData.put("PK_Oem", "1");
                 postData.put("AppKey", "2");
 
-                writer.write(getPostDataString(postData));
-                //System.out.println(json.toString());
-                //writer.write("json2=" + json2.toString());
-                writer.flush();
+                String pk_account = handleURLConnections(URLMap.get("1"), postData);
+                processTheData("1", pk_account);
 
-                String line;
-                String text = "";
+                postData.clear();
 
-                BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                postData.put("PK_Account", pk_account);
+                String devices = handleURLConnections(URLMap.get("2"), postData);
+                String PK_Device = processTheData("2",devices);
 
-                while ((line = reader.readLine()) != null) {
+                postData.clear();
+
+
+                //writer.write(getPostDataString(postData));
+                //writer.flush();
+
+                //String line;
+                //String text = "";
+
+                //BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+
+                /*while ((line = reader.readLine()) != null) {
                     text += line + "/n";
                     //printResponse(text);
                     getEncodedStringAndDecode(text);
                 }
                 writer.close();
-                reader.close();
+                reader.close();*/
 
             } catch (Exception e) {
                 e.printStackTrace();
             }
             return null;
-        }
-
-        private String getPostDataString(LinkedHashMap<String, String> params) throws UnsupportedEncodingException {
-            StringBuilder result = new StringBuilder();
-            boolean first = true;
-            for (Map.Entry<String, String> entry : params.entrySet()) {
-                if (first)
-                    first = false;
-                else
-                    result.append("&");
-
-                result.append(URLEncoder.encode(entry.getKey(), "UTF-8"));
-                result.append("=");
-                result.append(URLEncoder.encode(entry.getValue(), "UTF-8"));
-            }
-            //System.out.println(result);
-            return result.toString();
-        }
-
-        public void printResponse(String line) {
-            try {
-                JSONObject jsonArray = new JSONObject(line);
-                System.out.println(jsonArray.get("PK_Account"));
-                System.out.println(jsonArray);
-                String PK_Account = (String) jsonArray.get("PK_Account");
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-
         }
 
         public String hashThePassword(String password) throws NoSuchAlgorithmException {
@@ -286,10 +254,7 @@ public  class MainActivity extends ActionBarActivity {
             return sb.toString();
         }
 
-        public void UpdateUI (JSONObject json){
 
-
-        }
         /*public void writeToFile(String line) throws IOException {
 
             try {
@@ -339,20 +304,141 @@ public  class MainActivity extends ActionBarActivity {
 
         }*/
 
-        public void getEncodedStringAndDecode (String encodedResponse) {
-            byte[] decodedBytes = Base64.decode(encodedResponse,Base64.DEFAULT);
-            String decodedString = new String(decodedBytes);
-            System.out.println("decodedBytes " + decodedString);
-            printResponse(decodedString);
+        public String handleURLConnections(String inputUrl, LinkedHashMap linkedHashMap) {
+
+            String line;
+            String text = "";
+
+            try {
+
+                URL url = new URL(inputUrl);
+
+                URLConnection conn = url.openConnection();
+                conn.setDoOutput(true);
+
+                OutputStreamWriter writer = new OutputStreamWriter(conn.getOutputStream());
+
+                writer.write(postDataString(linkedHashMap));
+                writer.flush();
+
+                BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+
+                while ((line = reader.readLine()) != null) {
+                    text += line + "/n";
+                    //printResponse(text);
+                    //getEncodedStringAndDecode(text);
+                }
+                writer.close();
+                reader.close();
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            return text;
+
         }
 
-        public void theGatewaysAssignedToAccount (String url) {
+        public String processTheData(String type, String text) {
+
+            String result = "";
+            switch (type) {
+                case "1":
+                    try {
+                        byte[] decodedBytes = Base64.decode(text, Base64.DEFAULT);
+                        String decodedString = new String(decodedBytes);
+                        JSONObject jsonArray = new JSONObject(decodedString);
+                        //System.out.println(jsonArray.get("PK_Account"));
+                        //System.out.println(jsonArray);
+                        String PK_Account = (String) jsonArray.get("PK_Account");
+                        return PK_Account;
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                    break;
+                case "2":
+                    try {
+                        String PK_Device = selectGateway(text);
+                        return PK_Device;
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                    break;
+                case "3":
+                    break;
+                case "4":
+                    break;
+                case "5":
+                    break;
+                case "6":
+                    break;
+                case "7":
+                    break;
+                case "8":
+                    break;
+                case "9":
+                    break;
+                case "10":
+                    break;
+                case "11":
+                    break;
+                case "12":
+                    break;
+                default:
+                    break;
+            }
+            return result;
+        }
+
+        private String postDataString(LinkedHashMap<String, String> params) throws UnsupportedEncodingException {
+            StringBuilder result = new StringBuilder();
+            boolean first = true;
+            for (Map.Entry<String, String> entry : params.entrySet()) {
+                if (first)
+                    first = false;
+                else
+                    result.append("&");
+
+                result.append(URLEncoder.encode(entry.getKey(), "UTF-8"));
+                result.append("=");
+                result.append(URLEncoder.encode(entry.getValue(), "UTF-8"));
+            }
+            //System.out.println(result);
+            return result.toString();
+        }
+
+        public void getAboutDevicesAndPkDevice(String PK_Account) {
 
         }
 
+        private String selectGateway(String json) throws JSONException {
 
+            listView = (ListView) findViewById(R.id.gatewaysListView);
+            JSONObject jsonObject = new JSONObject(json);
+            JSONArray jsonArray = jsonObject.getJSONArray("Devices");
+            String [] PK_Devices = new String[0];
+            for(int i=0;i<jsonArray.length();i++) {
+                JSONObject jsonObject1 = (JSONObject) jsonArray.get(i);
+                String pk_device = (String)jsonObject1.get("PK_Device");
+                PK_Devices[i] = pk_device;
+            }
+
+            ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(getBaseContext(),R.layout.gateways,R.id.textView,PK_Devices);
+            listView.setAdapter(arrayAdapter);
+
+            Dialog di = new Dialog(getApplicationContext());
+            di.setContentView(R.layout.gateways);
+            di.setCancelable(false);
+
+            di.show();
+            listView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    int item = v.getVerticalScrollbarPosition();
+                    itemValue = (String) listView.getItemAtPosition(item);
+                }
+            });
+            return itemValue;
+        }
     }
-
-
 }
-

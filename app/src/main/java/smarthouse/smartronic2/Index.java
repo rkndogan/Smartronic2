@@ -22,8 +22,8 @@ public class Index extends ActionBarActivity {
     public final static String EXTRA_MESSAGE = "extra message!";
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+    protected void onCreate(Bundle onRestoreInstanceState) {
+        super.onCreate(onRestoreInstanceState);
         setContentView(R.layout.activity_index);
     }
 
