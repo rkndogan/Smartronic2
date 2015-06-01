@@ -2,6 +2,11 @@ package smarthouse.smartronic2;
 
 
 import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
@@ -13,20 +18,27 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.w3c.dom.Text;
 
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-public class Room extends ActionBarActivity {
+public class Room extends Activity{
 
     HashMap<String, Integer> user = new HashMap<>();
-
+    public SharedPreferences mPrefs;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_room);
+        SharedPreferences mPrefs = getSharedPreferences("rooms",MODE_PRIVATE);
+        SharedPreferences.Editor ed=mPrefs.edit();
+        Button button = (Button) findViewById(R.id.kitchenTextView);
+        button.setText(mPrefs.getString("room1",""));
+        registerBoradcastReceiver();
 
         // Buttons
 
@@ -36,7 +48,10 @@ public class Room extends ActionBarActivity {
         Button kidRoomButton = (Button) findViewById(R.id.kidRoomTextView);
 
         buttonHandler(saloonButton, kitchenButton, bedRoomButton, kidRoomButton);
+
     }
+
+
 
 
     @Override
@@ -194,6 +209,32 @@ public class Room extends ActionBarActivity {
 
         }
     }*/
+    private BroadcastReceiver mybroadcastreceiver=new BroadcastReceiver()  {
+        @Override
+        public void onReceive(Context context, Intent intent)  {
+            Toast.makeText(getApplication(),"masdad",Toast.LENGTH_SHORT).show();
+            Button button = (Button) findViewById(R.id.kitchenTextView);
+            SharedPreferences mPrefs = getSharedPreferences("rooms",MODE_PRIVATE);
+            SharedPreferences.Editor ed=mPrefs.edit();
+            JSONObject jsonObject=null;
+            try {
+                 jsonObject=new JSONObject(intent.getStringExtra("melih"));
+                button.setText(jsonObject.getString("key"));
+                ed.putString("room1",jsonObject.getString("key") );
+                ed.commit();
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
 
+
+        }
+    };
+    public void registerBoradcastReceiver(){
+        IntentFilter myIntentFilter = new IntentFilter();
+        myIntentFilter.addAction("burak");
+
+        registerReceiver(mybroadcastreceiver, myIntentFilter);
+    }
 
 }
+

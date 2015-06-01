@@ -1,6 +1,7 @@
 package smarthouse.smartronic2;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.AsyncTask;
 
 import org.json.JSONException;
@@ -25,18 +26,31 @@ public class Polling extends AsyncTask <String,String,String> {
     String text = "";
     Context context;
     private Polling poll;
+    private boolean running=true;
     MainActivity urrr = new MainActivity();
     public  Polling (Context c){
         this.context=c;
     }
 
     @Override
+    protected void onCancelled() {
+        running=false;
+        super.onCancelled();
+
+
+    }
+
+    @Override
     protected void onPostExecute(String s) {
 
         Toast.makeText(context,s,Toast.LENGTH_SHORT).show();
+        Intent myintent=new Intent("burak");
+        myintent.putExtra("melih",s);
+        context.sendBroadcast(myintent);
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
+
                 poll = new Polling(context);
                 poll.execute();
             }
@@ -47,55 +61,56 @@ public class Polling extends AsyncTask <String,String,String> {
     @Override
     protected String doInBackground(String ... params) {
 
+        if(running) {
+            try {
+                URL url = new URL(urrr.CommandURL);
 
-        try {
-            URL url = new URL(urrr.CommandURL);
+                URLConnection conn = url.openConnection();
+                conn.setDoOutput(true);
 
-            URLConnection conn = url.openConnection();
-            conn.setDoOutput(true);
-
-            OutputStreamWriter writer = new OutputStreamWriter(conn.getOutputStream());
-
-
-            //postData.put("PK_Oem", "");
-            //postData.put("AppKey", "");
+                OutputStreamWriter writer = new OutputStreamWriter(conn.getOutputStream());
 
 
-            //writer.write(getPostDataString(postData));
-            //System.out.println(json.toString());
-            writer.write("naber");
-            writer.flush();
-
-            String line;
+                //postData.put("PK_Oem", "");
+                //postData.put("AppKey", "");
 
 
-            BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                //writer.write(getPostDataString(postData));
+                //System.out.println(json.toString());
+                writer.write("naber");
+                writer.flush();
 
-            while ((line = reader.readLine()) != null) {
-                System.out.println(line);
-                text += line + "/n";
+                String line;
 
+
+                BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+
+                while ((line = reader.readLine()) != null) {
+                    System.out.println(line);
+                    text += line + "/n";
+
+                }
+                writer.close();
+                reader.close();
+
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-            writer.close();
-            reader.close();
+            try {
 
-        } catch (Exception e) {
-            e.printStackTrace();
+                JSONObject jsonObject = new JSONObject(text);
+                System.out.println(jsonObject.isNull("key"));
+                //JSONArray jsonArray = new JSONArray(text);
+                item = jsonObject.getString("key");
+                System.out.println(item);
+
+
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
         }
-        try {
-
-            JSONObject jsonObject = new JSONObject(text);
-            System.out.println(jsonObject.isNull("key"));
-            //JSONArray jsonArray = new JSONArray(text);
-            item = jsonObject.getString("key");
-            System.out.println(item);
-
-
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        return item;
+            return text;
 
     }
+
 }
