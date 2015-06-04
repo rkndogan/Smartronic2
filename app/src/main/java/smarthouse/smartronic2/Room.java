@@ -7,6 +7,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
@@ -14,6 +16,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewStub;
 import android.widget.Button;
+import android.widget.GridLayout;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
@@ -26,32 +30,35 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-public class Room extends Activity{
+public class Room extends Activity {
 
     HashMap<String, Integer> user = new HashMap<>();
     public SharedPreferences mPrefs;
+    int say = 1;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_room);
-        SharedPreferences mPrefs = getSharedPreferences("rooms",MODE_PRIVATE);
-        SharedPreferences.Editor ed=mPrefs.edit();
+        SharedPreferences mPrefs = getSharedPreferences("rooms", MODE_PRIVATE);
         Button button = (Button) findViewById(R.id.kitchenTextView);
-        button.setText(mPrefs.getString("room1",""));
+        button.setText(mPrefs.getString("room1", ""));
         registerBoradcastReceiver();
+
+
+        //dynamiclly update xml
+
 
         // Buttons
 
         Button saloonButton = (Button) findViewById(R.id.saloonTextView);
         Button kitchenButton = (Button) findViewById(R.id.kitchenTextView);
-        Button bedRoomButton= (Button) findViewById(R.id.bedRoomTextView);
+        Button bedRoomButton = (Button) findViewById(R.id.bedRoomTextView);
         Button kidRoomButton = (Button) findViewById(R.id.kidRoomTextView);
 
         buttonHandler(saloonButton, kitchenButton, bedRoomButton, kidRoomButton);
 
     }
-
-
 
 
     @Override
@@ -209,32 +216,72 @@ public class Room extends Activity{
 
         }
     }*/
-    private BroadcastReceiver mybroadcastreceiver=new BroadcastReceiver()  {
+    private BroadcastReceiver mybroadcastreceiver = new BroadcastReceiver() {
         @Override
-        public void onReceive(Context context, Intent intent)  {
-            Toast.makeText(getApplication(),"masdad",Toast.LENGTH_SHORT).show();
-            Button button = (Button) findViewById(R.id.kitchenTextView);
-            SharedPreferences mPrefs = getSharedPreferences("rooms",MODE_PRIVATE);
-            SharedPreferences.Editor ed=mPrefs.edit();
-            JSONObject jsonObject=null;
-            try {
-                 jsonObject=new JSONObject(intent.getStringExtra("melih"));
-                button.setText(jsonObject.getString("key"));
-                ed.putString("room1",jsonObject.getString("key") );
-                ed.commit();
-            } catch (JSONException e) {
-                e.printStackTrace();
+        public void onReceive(Context context, Intent intent) {
+            say++;
+            String action;
+            //gelen bilgiye gore buton ekleme
+            if (say < 4) {
+                final LinearLayout ll = (LinearLayout) findViewById(R.id.linearLayout);
+                final Button btn = new Button(getApplicationContext());
+                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                btn.setText("melih");
+                btn.setId(R.id.melih_butonu);
+                btn.setLayoutParams(params);
+                ll.addView(btn);
+            }
+            action = intent.getAction();
+            System.out.println(action);
+
+            switch (0) {
+                default:
+                    if (action.equals("polling guncellemesi")) {
+                        try {
+                            JSONObject jsonObject = null;
+                            jsonObject = new JSONObject(intent.getStringExtra("melih"));
+                            Toast.makeText(getApplication(), "masdad", Toast.LENGTH_SHORT).show();
+                            Button button = (Button) findViewById(R.id.kitchenTextView);
+                            SharedPreferences mPrefs = getSharedPreferences("rooms", MODE_PRIVATE);
+                            SharedPreferences.Editor ed = mPrefs.edit();
+                            button.setText(jsonObject.getString("key"));
+                            ed.putString("room1", jsonObject.getString("key"));
+                            ed.commit();
+
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                        break;
+                    }
+                    if (action.equals("android.net.conn.CONNECTIVITY_CHANGE")) {
+                        ConnectivityManager connman = (ConnectivityManager) context.getSystemService(context.CONNECTIVITY_SERVICE);
+                        NetworkInfo networkInfo = connman.getActiveNetworkInfo();
+                        String extra = networkInfo.getExtraInfo();
+                        System.out.println(extra);
+                        System.out.println(networkInfo.getType());
+                        String orkun = networkInfo.getTypeName();
+                        Toast.makeText(getApplication(), orkun, Toast.LENGTH_SHORT).show();
+                        break;
+                    }
             }
 
 
         }
     };
-    public void registerBoradcastReceiver(){
+
+    public void registerBoradcastReceiver() {
         IntentFilter myIntentFilter = new IntentFilter();
         myIntentFilter.addAction("burak");
+        myIntentFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
 
         registerReceiver(mybroadcastreceiver, myIntentFilter);
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        unregisterReceiver(mybroadcastreceiver);
+    }
 }
 

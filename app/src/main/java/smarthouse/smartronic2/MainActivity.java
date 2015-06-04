@@ -9,6 +9,7 @@ import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.text.Layout;
 import android.util.Base64;
 import android.util.Log;
 import android.view.Menu;
@@ -18,6 +19,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import org.json.JSONArray;
@@ -31,6 +33,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
@@ -39,6 +42,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
 
 public class MainActivity extends ActionBarActivity {
 
@@ -52,6 +57,9 @@ public class MainActivity extends ActionBarActivity {
     Boolean error = false;
     String selectedOption;
     Context context;
+    Boolean isstoped=false;
+    private Handler handler;
+
     //String[] Logout = {"Yes", "No"};
     //String[] Home = {};
 
@@ -60,7 +68,7 @@ public class MainActivity extends ActionBarActivity {
     //JSONObject json = new JSONObject();
     //JSONObject json2 = new JSONObject();
 
-    // Followed URL's will be used when posting data to mios vera eben var m�?
+    // Followed URL's will be used when posting data to mios vera eben var m??
 
     private static String URLLogin = "https://vera-us-oem-autha.mios.com/autha/auth/username/";
     private static String getTheDevices = "https://vera-us-oem-authd.mios.com/locator/locator/";
@@ -164,6 +172,7 @@ public class MainActivity extends ActionBarActivity {
         return true;
     }
 
+
     public void ForgotPass(View view) {
         Intent intent = new Intent(MainActivity.this, Forgot.class);
         startActivity(intent);
@@ -176,7 +185,6 @@ public class MainActivity extends ActionBarActivity {
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
-
             new Polling(getApplicationContext()).execute();
         }
 
@@ -216,7 +224,7 @@ public class MainActivity extends ActionBarActivity {
 
                 postData.put("PK_Account", pk_account);
                 String devices = handleURLConnections(URLMap.get("2"), postData);
-                String PK_Device = processTheData("2",devices);
+                String PK_Device = processTheData("2", devices);
 
                 postData.clear();
 
@@ -313,7 +321,7 @@ public class MainActivity extends ActionBarActivity {
 
                 URL url = new URL(inputUrl);
 
-                URLConnection conn = url.openConnection();
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setDoOutput(true);
 
                 OutputStreamWriter writer = new OutputStreamWriter(conn.getOutputStream());
@@ -416,14 +424,14 @@ public class MainActivity extends ActionBarActivity {
             listView = (ListView) findViewById(R.id.gatewaysListView);
             JSONObject jsonObject = new JSONObject(json);
             JSONArray jsonArray = jsonObject.getJSONArray("Devices");
-            String [] PK_Devices = new String[0];
-            for(int i=0;i<jsonArray.length();i++) {
+            String[] PK_Devices = new String[0];
+            for (int i = 0; i < jsonArray.length(); i++) {
                 JSONObject jsonObject1 = (JSONObject) jsonArray.get(i);
-                String pk_device = (String)jsonObject1.get("PK_Device");
+                String pk_device = (String) jsonObject1.get("PK_Device");
                 PK_Devices[i] = pk_device;
             }
 
-            ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(getBaseContext(),R.layout.gateways,R.id.textView,PK_Devices);
+            ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(getBaseContext(), R.layout.gateways, R.id.textView, PK_Devices);
             listView.setAdapter(arrayAdapter);
 
             Dialog di = new Dialog(getApplicationContext());
@@ -441,4 +449,12 @@ public class MainActivity extends ActionBarActivity {
             return itemValue;
         }
     }
+
+    @Override
+    protected void onDestroy() {
+        this.isstoped=true;
+        super.onDestroy();
+
+    }
+
 }
