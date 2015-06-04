@@ -43,6 +43,14 @@ public class Index extends ActionBarActivity {
         Button b2 = (Button) findViewById(R.id.missions);
         b2.setTypeface(font2);
 
+        /*Typeface font3 = Typeface.createFromAsset(getAssets(), "fontawesome-webfont.ttf");
+        Button b3 = (Button) findViewById(R.id.rooms_icon_button);
+        b3.setTypeface(font3);
+
+        Typeface font4 = Typeface.createFromAsset(getAssets(), "fontawesome-webfont.ttf");
+        Button b4 = (Button) findViewById(R.id.security_icon_button);
+        b4.setTypeface(font4);*/
+
         return true;
     }
 
@@ -94,9 +102,5 @@ public class Index extends ActionBarActivity {
         //intent.putExtra(EXTRA_MESSAGE, message);
         startActivity(intent);
 
-    }
-
-    public static String getExtraMessage() {
-        return EXTRA_MESSAGE;
     }
 }

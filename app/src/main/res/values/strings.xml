@@ -16,6 +16,8 @@
     <string name="useful_in_future" formatted="false">you have %d useful strings in %.2f years</string>
     <string name="settings_icon">&#xf085;</string>
     <string name="missions_icon">&#xf0ae;</string>
+    <string name="rooms_icon">&#xf015;</string>
+    <string name="security_icon">&#xf071;</string>
     <string name="on">On</string>
     <string name="lamp_status">Lamp Status</string>
     <string name="username">Username</string>
