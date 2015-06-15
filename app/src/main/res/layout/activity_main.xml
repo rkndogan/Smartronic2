@@ -1,100 +1,110 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:foo="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@drawable/background2"
+    android:paddingBottom="@dimen/activity_vertical_margin"
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    android:paddingBottom="@dimen/activity_vertical_margin"
-    tools:context="smarthouse.smartronic2.MainActivity"
-    android:background="@drawable/arkaplan">
+    tools:context="smarthouse.smartronic2.MainActivity">
 
     <RelativeLayout
-        android:layout_width="fill_parent"
+        android:id="@+id/relativeLayout"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="@drawable/rounded_layout">
+        android:background="@drawable/rounded_layout"
+        android:layout_centerVertical="true"
+        android:layout_centerHorizontal="true">
 
         <LinearLayout
+            android:id="@+id/linearLayout2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:id="@+id/linearLayout2"
-            android:layout_margin="20dp">
-
-            <TextView
-                android:text="@string/username"
-                style="@style/LoginTextView"
-                android:id="@+id/usernameView" />
+            android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true"
+            android:orientation="horizontal"
+            android:layout_marginTop="20dp">
 
             <EditText
-                android:hint="@string/hint_email"
+                android:id="@+id/UsernameEditText"
                 style="@style/TextField"
                 android:background="@drawable/rounded_edittext"
-                android:id="@+id/UsernameEditText" />
-
+                android:hint="@string/username"
+                android:textColorHint="@android:color/white" />
         </LinearLayout>
 
+        <View
+            android:id="@+id/textView3"
+            android:layout_width="fill_parent"
+            android:layout_height="1dp"
+            android:layout_alignEnd="@+id/linearLayout5"
+            android:layout_alignLeft="@+id/linearLayout5"
+            android:layout_alignRight="@+id/linearLayout5"
+            android:layout_alignStart="@+id/linearLayout5"
+            android:layout_below="@+id/linearLayout2"
+            android:layout_marginTop="10dp"
+            android:background="@android:color/white" />
+
         <LinearLayout
+            android:id="@+id/linearLayout4"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_below="@+id/linearLayout2"
-            android:layout_margin="20dp"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentStart="true"
-            android:id="@+id/linearLayout4">
-
-
-            <TextView
-                android:text="@string/password"
-                style="@style/LoginTextView"
-                android:id="@+id/passwordView" />
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="20dp"
+            android:orientation="horizontal">
 
             <EditText
+                android:id="@+id/PasswordEditText"
                 style="@style/TextField"
                 android:background="@drawable/rounded_edittext"
-                android:id="@+id/PasswordEditText" />
-
+                android:hint="@string/password"
+                android:textColorHint="@android:color/white" />
         </LinearLayout>
 
         <LinearLayout
-            android:layout_height="wrap_content"
+            android:id="@+id/linearLayout5"
             android:layout_width="wrap_content"
-            android:id="@+id/linearLayout3"
+            android:layout_height="wrap_content"
             android:layout_below="@+id/linearLayout4"
-            android:layout_marginTop="20dp"
-            android:layout_marginLeft="40dp"
-            android:layout_marginRight="40dp"
-            android:layout_alignParentRight="true"
-            android:layout_alignParentEnd="true"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentStart="true">
+            android:layout_centerHorizontal="true"
+            android:layout_marginBottom="20dp"
+            android:layout_marginTop="20dp">
 
             <Button
-                style="@style/LoginButton"
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:background="@drawable/button"
                 android:id="@+id/LoginButton"
+                style="@style/LoginButton"
+                android:layout_width="161dp"
+                android:layout_height="30dp"
+                android:layout_below="@+id/forgot_text"
+                android:layout_centerHorizontal="true"
+                android:background="@drawable/button"
                 android:text="@string/login_button"
                 android:textSize="17sp" />
+
         </LinearLayout>
+
 
         <LinearLayout
+            android:id="@+id/linearLayout3"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:id="@+id/linearLayout5"
-            android:layout_marginTop="20dp"
-            android:layout_marginBottom="20dp"
-            android:layout_below="@+id/linearLayout3"
-            android:layout_centerHorizontal="true">
+            android:layout_below="@+id/linearLayout5"
+            android:layout_centerHorizontal="true"
+            android:orientation="horizontal">
 
             <TextView
-                android:text="@string/forgot"
-                style="@style/LoginForgot"
                 android:id="@+id/forgot_text"
+                style="@style/LoginForgot"
                 android:gravity="center"
-                android:textSize="15sp"
-                android:onClick="ForgotPass"/>
-
+                android:onClick="ForgotPass"
+                android:text="@string/forgot"
+                android:textSize="15sp" />
         </LinearLayout>
+
+
     </RelativeLayout>
+
 </RelativeLayout>

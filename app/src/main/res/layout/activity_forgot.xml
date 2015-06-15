@@ -7,7 +7,7 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     android:paddingBottom="@dimen/activity_vertical_margin"
     tools:context="smarthouse.smartronic2.Forgot"
-    android:background="@drawable/arkaplan">
+    android:background="@drawable/background2">
 
     <TextView
         android:text="@string/password_reminder_text"

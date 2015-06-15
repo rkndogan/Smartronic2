@@ -18,9 +18,6 @@ import java.net.URLConnection;
 import android.os.Handler;
 import android.widget.Toast;
 
-/**
- * Created by smartronic on 27.5.2015. adb
- */
 public class Polling extends AsyncTask<String, String, String> {
 
     String response = "";
@@ -37,6 +34,7 @@ public class Polling extends AsyncTask<String, String, String> {
     int EngineState = -2;
     int NumFailures = 0;
     private Polling poll;
+    public Toast toast = null;
     MainActivity urrr = new MainActivity();
 
     public Polling(Context c) {
@@ -46,7 +44,8 @@ public class Polling extends AsyncTask<String, String, String> {
     @Override
     protected void onPostExecute(String s) {
 
-        Toast.makeText(context, s, Toast.LENGTH_SHORT).show();
+        toast = Toast.makeText(context, s, Toast.LENGTH_SHORT);
+        toast.show();
         Intent myintent = new Intent("polling guncellemesi");
         myintent.putExtra("melih", s);
         context.sendBroadcast(myintent);
@@ -142,4 +141,9 @@ public class Polling extends AsyncTask<String, String, String> {
 
     }
 
+    @Override
+    protected void onCancelled() {
+        toast.cancel();
+        super.onCancelled();
+    }
 }

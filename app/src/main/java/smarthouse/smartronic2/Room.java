@@ -1,6 +1,5 @@
 package smarthouse.smartronic2;
 
-
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -9,22 +8,17 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewStub;
 import android.widget.Button;
-import android.widget.GridLayout;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.ToggleButton;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.w3c.dom.Text;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -32,9 +26,13 @@ import java.util.Map;
 
 public class Room extends Activity {
 
+    String dataURL = "/data_request?id=lu_sdata&loadtime=0&dataversion=0";
+
     HashMap<String, Integer> user = new HashMap<>();
-    public SharedPreferences mPrefs;
+    //public SharedPreferences mPrefs;
     int say = 1;
+    MainActivity ma = new MainActivity();
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,21 +41,23 @@ public class Room extends Activity {
         SharedPreferences mPrefs = getSharedPreferences("rooms", MODE_PRIVATE);
         Button button = (Button) findViewById(R.id.kitchenTextView);
         button.setText(mPrefs.getString("room1", ""));
-        registerBoradcastReceiver();
+        button.setBackgroundResource(R.drawable.circle);
+        registerBroadcastReceiver();
+        //dynamically update xml
 
-
-        //dynamiclly update xml
+        String internalIp = ma.InternalIp;
+        dataURL = internalIp + dataURL;
+        dataURL = "http://" + dataURL;
 
 
         // Buttons
 
         Button saloonButton = (Button) findViewById(R.id.saloonTextView);
-        Button kitchenButton = (Button) findViewById(R.id.kitchenTextView);
+        //Button kitchenButton = (Button) findViewById(R.id.kitchenTextView);
         Button bedRoomButton = (Button) findViewById(R.id.bedRoomTextView);
         Button kidRoomButton = (Button) findViewById(R.id.kidRoomTextView);
 
-        buttonHandler(saloonButton, kitchenButton, bedRoomButton, kidRoomButton);
-
+        buttonHandler(saloonButton, button, bedRoomButton, kidRoomButton);
     }
 
 
@@ -182,64 +182,39 @@ public class Room extends Activity {
         return user;
     }
 
-    /*public void goLamp1Saloon(View view) {
-        System.out.println("in lamp2 saloon");
-        ViewStub stub = (ViewStub) findViewById(R.id.lamp_on_off);
-        View inflated = stub.inflate();
-    }
-
-    public void goLamp2Saloon(View view) {
-        System.out.println("in lamp1 saloon");
-        ViewStub stub = (ViewStub) findViewById(R.id.lamp2_on_off);
-        View inflated = stub.inflate();
-    }
-
-    public void goTvSaloon(View view) {
-        System.out.println("in tv saloon");
-        ViewStub stub = (ViewStub) findViewById(R.id.tv_on_off);
-        View inflated = stub.inflate();
-    }
-
-    public void goCurtainSaloon(View view) {
-        System.out.println("in curtain saloon");
-        ViewStub stub = (ViewStub) findViewById(R.id.curtain_settings);
-        View inflated = stub.inflate();
-
-    }
-
-    public void onOffToggleClicked(View view) {
-        boolean on = ((ToggleButton) view).isChecked();
-        if (on) {
-            System.out.println("excuse me while i am on clicked");
-        } else {
-            System.out.println("excuse me while i am on clicked");
-
-        }
-    }*/
-    private BroadcastReceiver mybroadcastreceiver = new BroadcastReceiver() {
+    private BroadcastReceiver myBroadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             say++;
             String action;
-            //gelen bilgiye gore buton ekleme
+
             if (say < 4) {
                 final LinearLayout ll = (LinearLayout) findViewById(R.id.linearLayout);
                 final Button btn = new Button(getApplicationContext());
                 LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-                btn.setText("melih");
+                        LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
+                btn.setText("new_button");
                 btn.setId(R.id.melih_butonu);
+                btn.setBackgroundResource(R.drawable.circle);
                 btn.setLayoutParams(params);
                 ll.addView(btn);
+
+                Button x = (Button) findViewById(R.id.melih_butonu);
+                x.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        System.out.println("bana tıkladılar abi");
+                    }
+                });
             }
             action = intent.getAction();
-            System.out.println(action);
+            System.out.println("the ACTION is that:" + action);
 
             switch (0) {
                 default:
                     if (action.equals("polling guncellemesi")) {
                         try {
-                            JSONObject jsonObject = null;
+                            JSONObject jsonObject;
                             jsonObject = new JSONObject(intent.getStringExtra("melih"));
                             Toast.makeText(getApplication(), "masdad", Toast.LENGTH_SHORT).show();
                             Button button = (Button) findViewById(R.id.kitchenTextView);
@@ -247,41 +222,42 @@ public class Room extends Activity {
                             SharedPreferences.Editor ed = mPrefs.edit();
                             button.setText(jsonObject.getString("key"));
                             ed.putString("room1", jsonObject.getString("key"));
-                            ed.commit();
+                            ed.apply();
 
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
                         break;
                     }
-                    if (action.equals("android.net.conn.CONNECTIVITY_CHANGE")) {
-                        ConnectivityManager connman = (ConnectivityManager) context.getSystemService(context.CONNECTIVITY_SERVICE);
-                        NetworkInfo networkInfo = connman.getActiveNetworkInfo();
-                        String extra = networkInfo.getExtraInfo();
-                        System.out.println(extra);
-                        System.out.println(networkInfo.getType());
-                        String orkun = networkInfo.getTypeName();
-                        Toast.makeText(getApplication(), orkun, Toast.LENGTH_SHORT).show();
+                    /*if (action.equals("android.net.conn.CONNECTIVITY_CHANGE")) {
+                        ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(context.CONNECTIVITY_SERVICE);
+                        NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
+                        //String extra = networkInfo.getExtraInfo();
+                        //System.out.println(extra);
+                        //System.out.println(networkInfo.getType());
+                        String netType = "";
+                        if (networkInfo == null) {
+                            netType = "";
+                        } else {
+                            netType = networkInfo.getTypeName();
+                        }
+                        Toast.makeText(getApplication(), netType, Toast.LENGTH_SHORT).show();
                         break;
-                    }
+                    }*/
             }
-
-
         }
     };
 
-    public void registerBoradcastReceiver() {
+    public void registerBroadcastReceiver() {
         IntentFilter myIntentFilter = new IntentFilter();
-        myIntentFilter.addAction("burak");
         myIntentFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
-
-        registerReceiver(mybroadcastreceiver, myIntentFilter);
+        registerReceiver(myBroadcastReceiver, myIntentFilter);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        unregisterReceiver(mybroadcastreceiver);
+        unregisterReceiver(myBroadcastReceiver);
     }
 }
 

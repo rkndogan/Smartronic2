@@ -1,5 +1,6 @@
 package smarthouse.smartronic2;
 
+import android.graphics.Typeface;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
@@ -12,6 +13,9 @@ public class Forgot extends ActionBarActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_forgot);
+
+        String fontPath = "fonts/Walkway_Oblique_SemiBold.ttf";
+        Typeface tf = Typeface.createFromAsset(getAssets(), fontPath);
     }
 
 

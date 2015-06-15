@@ -2,18 +2,23 @@ package smarthouse.smartronic2;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.app.ProgressDialog;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.graphics.Typeface;
+import android.net.ConnectivityManager;
 import android.os.AsyncTask;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
-import android.text.Layout;
 import android.util.Base64;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.Window;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -37,15 +42,15 @@ import java.security.NoSuchAlgorithmException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.logging.Handler;
-import java.util.logging.LogRecord;
 
 public class MainActivity extends ActionBarActivity {
 
     EditText ed1;
     EditText ed2;
     Button loginButton;
+    TextView txt;
     LinkedHashMap<String, String> URLMap = new LinkedHashMap<>();
-    String username, password;
+    String username, password, encodedUsername;
     String salt = "oZ7QE6LcLJp6fiWzdqZc";
     String errorFormat = "";
     Boolean error = false;
@@ -60,29 +65,53 @@ public class MainActivity extends ActionBarActivity {
     Boolean isstoped = false;
     private Handler handler;
 
-    //String[] Logout = {"Yes", "No"};
-    //String[] Home = {};
+    String URLLogin = "https://vera-us-oem-autha.mios.com/autha/auth/username/";
+    String getTheDevices = "https://vera-us-oem-authd.mios.com/locator/locator/";
+    String requestToGateway = "https://vera-us-oem-device11.mios.com/device/device/device/";
+    String CommandURL = "http://ragip.info/Controller/index_melih.php";
+    String usingRelayServer = "/device/device/device/";
+    String sessionKeyServer = "/relay/relay/relay/device/";
+    String mmsSession = "/info/session/token";
+    String verifyURL = "/authd/auth/provision";
 
-    //private static String URL = "https://vera-us-oem-autha.mios.com/autha/auth/username/";
-
-    //JSONObject json = new JSONObject();
-    //JSONObject json2 = new JSONObject();
-
-    // Followed URL's will be used when posting data to mios vera eben var m�?
-
-    private static String URLLogin = "https://vera-us-oem-autha.mios.com/autha/auth/username/";
-    private static String getTheDevices = "https://vera-us-oem-authd.mios.com/locator/locator/";
-    private static String requestToGateway = "https://vera-us-oem-device11.mios.com/device/device/device/";
-    public static String CommandURL = "http://";
-    private static String usingRelayServer = "/device/device/device/";
-    private static String sessionKeyServer = "/relay/relay/relay/device/";
-    private static String mmsSession = "/info/session/token";
+    BroadcastReceiver myBroadcastReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        registerBroadcastReceiver();
+        new CheckConnection(getApplicationContext());
+        System.out.println(new ReceiveBroadcastMessage());
 
+        //PK_Device and HWKey will be checked here whether they have been stored or not.
+        /*if ((methods.getSPreferences(MyPREFERENCES, "PK_Device", getApplicationContext()) == null ||
+                methods.getSPreferences(MyPREFERENCES, "PK_Device", getApplicationContext()) == "") &&
+                (methods.getSPreferences(MyPREFERENCES, "HWKey", getApplicationContext()) == null ||
+                        methods.getSPreferences(MyPREFERENCES, "PK_Device", getApplicationContext()) == "")) {
+
+            // call request to get PK_Device and HWKey
+            // And store them on sharedPreferences
+
+            String response = methods.handleURLConnections("us-authd11.mios.com" + verifyURL, null, "3", "PUT", getApplicationContext());
+
+            String PK_Device = "";
+            String HWKey = "";
+
+            try {
+                JSONObject jsonArray = new JSONObject(response);
+                PK_Device = (String) jsonArray.get("PK_Device");
+                HWKey = (String) jsonArray.get("HWKey");
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
+            methods.updateSPreferences("PK_Device", PK_Device, MyPREFERENCES, getApplicationContext());
+            methods.updateSPreferences("HWKey", HWKey, MyPREFERENCES, getApplicationContext());
+        }*/
+        context = getApplicationContext();
+
+        String fontPath = "fonts/Walkway_Oblique_SemiBold.ttf";
 
         URLMap.put("1", URLLogin);
         URLMap.put("2", getTheDevices);
@@ -95,6 +124,13 @@ public class MainActivity extends ActionBarActivity {
         loginButton = (Button) findViewById(R.id.LoginButton);
         ed1 = (EditText) findViewById(R.id.UsernameEditText);
         ed2 = (EditText) findViewById(R.id.PasswordEditText);
+        txt = (TextView) findViewById(R.id.forgot_text);
+
+        Typeface tf = Typeface.createFromAsset(getAssets(), fontPath);
+        ed1.setTypeface(tf);
+        ed2.setTypeface(tf);
+        loginButton.setTypeface(tf);
+        txt.setTypeface(tf);
 
         loginButton.setOnClickListener(new View.OnClickListener() {
 
@@ -105,7 +141,6 @@ public class MainActivity extends ActionBarActivity {
 
                 username = ed1.getText().toString();
                 password = ed2.getText().toString();
-                System.out.println(username);
 
                 if ((username.matches("") && username == null) || (password.matches("") && password == null)) {
                     errorFormat += "username is wrong";
@@ -180,10 +215,16 @@ public class MainActivity extends ActionBarActivity {
         String itemValue;
         ListView listView;
 
+        /*@Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            ProgressDialog dialog = ProgressDialog.show(MainActivity.this,"Loading,","Please wait..",true,true,null);
+        }*/
+
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
-            new Polling(getApplicationContext()).execute();
+            //new Polling(getApplicationContext()).execute();
         }
 
         @Override
@@ -198,7 +239,7 @@ public class MainActivity extends ActionBarActivity {
                 String hashedPassword = hashThePassword(password);
 
                 // encoded username will be posted to mios vera
-                String encodedUsername = URLEncoder.encode(username, "utf-8");
+                encodedUsername = URLEncoder.encode(username, "utf-8");
 
                 URLMap.put("1", URLMap.get("1") + encodedUsername);
                 //URLLogin = URLLogin + encodedUsername;
@@ -227,12 +268,11 @@ public class MainActivity extends ActionBarActivity {
                 SharedPreferences sharedPreferences = getSharedPreferences(MyPREFERENCES, MODE_PRIVATE);
                 SharedPreferences.Editor editor = sharedPreferences.edit();
                 editor.putString("LAST_PK_Device", PK_Device);
-                editor.commit();
-                //System.out.println(sharedPreferences.getString("LAST_PK_Device", ""));
+                editor.apply();
 
                 postData.clear();
 
-                if (InternalIp == "" || InternalIp == null) {
+                if (InternalIp.equals("") || InternalIp == null) {
                     URLMap.put("5", "https://" + serverDevice + URLMap.get("5") + PK_Device);
                     postData.put("", "");
                     String response = handleURLConnections(URLMap.get("5"), postData, "1");
@@ -359,16 +399,14 @@ public class MainActivity extends ActionBarActivity {
                         String decodedString = new String(decodedBytes);
                         JSONObject jsonArray = new JSONObject(decodedString);
                         setIdentityToken(jsonArray);
-                        String PK_Account = (String) jsonArray.get("PK_Account");
-                        return PK_Account;
+                        return (String) jsonArray.get("PK_Account");
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
                     break;
                 case "2":
                     try {
-                        String PK_Device = selectGateway(text);
-                        return PK_Device;
+                        return selectGateway(text);
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
@@ -376,8 +414,7 @@ public class MainActivity extends ActionBarActivity {
                 case "3":
                     try {
                         JSONObject jsonArray = new JSONObject(text);
-                        String serverRelay = (String) jsonArray.get("Server_Relay");
-                        return serverRelay;
+                        return (String) jsonArray.get("Server_Relay");
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
@@ -423,7 +460,7 @@ public class MainActivity extends ActionBarActivity {
                 server_devices[i] = server_device;
             }
 
-            ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(getApplicationContext(), R.layout.gateways, R.id.textView, PK_Devices);
+            ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(getApplicationContext(), R.layout.gateways, R.id.textView, PK_Devices);
             listView.setAdapter(arrayAdapter);
 
             Dialog di = new Dialog(getApplicationContext());
@@ -452,22 +489,19 @@ public class MainActivity extends ActionBarActivity {
     }
 
 
-    public void cachedMemoryVariables(String pk_device, String username, String hwkey, String last_ip,
+    public void cachedMemoryVariables(String pk_device, String encodedUsername, String hwkey, String last_ip,
                                       String last_wifi, String last_engine_connect, String last_pk_device) {
 
         SharedPreferences sharedpreferences = getSharedPreferences(MyPREFERENCES, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedpreferences.edit();
-        editor.putString("Username", username);
+        editor.putString("Username", encodedUsername);
         editor.putString("PK_Device", pk_device);
         editor.putString("HWKey", hwkey);
         editor.putString("LAST_IP", last_ip);
         editor.putString("LAST_WIFI", last_wifi);
         editor.putString("LAST_ENGINE_CONNECT", last_engine_connect);
         editor.putString("LAST_PK_Device", last_pk_device);
-        editor.commit();
-
-
-        System.out.println("buraya bak BURAK" + sharedpreferences.getString("Username", ""));
+        editor.apply();
 
     }
 
@@ -487,4 +521,17 @@ public class MainActivity extends ActionBarActivity {
         this.responseCode = responseCode;
     }
 
+    /*public void setRunChoice(int runChoice) {
+        this.runChoice = runChoice;
+    }
+
+    public int getRunChoice() {
+        return this.runChoice;
+    }*/
+
+    public void registerBroadcastReceiver() {
+        IntentFilter myIntentFilter = new IntentFilter();
+        myIntentFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
+        registerReceiver(myBroadcastReceiver, myIntentFilter);
+    }
 }
