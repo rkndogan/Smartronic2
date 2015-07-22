@@ -1,15 +1,17 @@
 package smarthouse.smartronic2;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.graphics.drawable.Drawable;
 import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
+import android.view.ContextThemeWrapper;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -20,8 +22,11 @@ import android.widget.Toast;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class Room extends Activity {
@@ -29,37 +34,107 @@ public class Room extends Activity {
     String dataURL = "/data_request?id=lu_sdata&loadtime=0&dataversion=0";
 
     HashMap<String, Integer> user = new HashMap<>();
+
     //public SharedPreferences mPrefs;
     int say = 1;
+    int generatedButtonId = 0;
     MainActivity ma = new MainActivity();
+    Context context;
+    Database database;
+    Methods methods;
+    Button saloonButton, bedRoomButton, kidRoomButton;
+    int numberOfRooms = 0;
+    ArrayList<Button> roomArrayList = new ArrayList<>();
+    ArrayList<Button> deviceArrayList = new ArrayList<>();
+    ArrayList plugNamesArray = new ArrayList();
+    ArrayList heaterNamesArray = new ArrayList();
+    ArrayList lampNamesArray = new ArrayList();
+
+    //finish();
+    //startActivity(getIntent()); THIS CODE REFRESHES THE ACTIVITY
+
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_room);
+
+        database = new Database(getApplicationContext());
+        methods = new Methods(getApplicationContext());
+
         SharedPreferences mPrefs = getSharedPreferences("rooms", MODE_PRIVATE);
         Button button = (Button) findViewById(R.id.kitchenTextView);
         button.setText(mPrefs.getString("room1", ""));
         button.setBackgroundResource(R.drawable.circle);
         registerBroadcastReceiver();
         //dynamically update xml
+        context = getApplicationContext();
 
-        String internalIp = ma.InternalIp;
-        dataURL = internalIp + dataURL;
-        dataURL = "http://" + dataURL;
+        // Linear Layout
 
+        /*final LinearLayout ly = (LinearLayout) findViewById(R.id.linearLayout);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
+        params.leftMargin = 50;*/
 
-        // Buttons
+        numberOfRooms = database.getRowCount(getString(R.string.room_table));
 
-        Button saloonButton = (Button) findViewById(R.id.saloonTextView);
-        //Button kitchenButton = (Button) findViewById(R.id.kitchenTextView);
-        Button bedRoomButton = (Button) findViewById(R.id.bedRoomTextView);
-        Button kidRoomButton = (Button) findViewById(R.id.kidRoomTextView);
+        if (numberOfRooms == 0) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(Room.this);
+            builder.setMessage(getString(R.string.no_room) + getString(R.string.wish_exit))
+                    .setTitle(getString(R.string.exit))
+                    .setCancelable(false);
+            builder.setPositiveButton(getString(R.string.yes), new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    moveTaskToBack(true);
+                    android.os.Process.killProcess(android.os.Process.myPid());
+                    System.exit(1);
+                }
+            });
 
-        buttonHandler(saloonButton, button, bedRoomButton, kidRoomButton);
+            builder.setNegativeButton(getString(R.string.no), new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    Toast.makeText(context, getString(R.string.returning), Toast.LENGTH_SHORT).show();
+                }
+            });
+            AlertDialog alertdialog = builder.create();
+            alertdialog.show();
+        } else {
+            for (int i = 0; i < numberOfRooms; i++) {
+                // in this place, buttons will be added
+                createButton("erfv", R.id.linearLayout, "rferv", true, i);
+            }
+
+            // How it will be implemented to my previous algorithm?
+            kidRoomButton = (Button) findViewById(R.id.kidRoomTextView);
+
+            String internalIp = ma.InternalIp;
+            dataURL = internalIp + dataURL;
+            dataURL = "http://" + dataURL;
+
+            buttonHandler(roomArrayList);
+
+        }
     }
 
+
+
+    @Override
+    protected void onPause() {
+        //methods.createSPreferences(getString(R.string.room_status), this.context);
+        //methods.updateSPreferences("button1", saloonButton.getText().toString(), getString(R.string.room_status), this.context);
+        super.onPause();
+        unregisterReceiver(myBroadcastReceiver);
+    }
+
+    @Override
+    protected void onResume() {
+        // sharedPreferences Data will be restored here
+        super.onResume();
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -86,45 +161,45 @@ public class Room extends Activity {
         return super.onOptionsItemSelected(item);
     }
 
-    public void buttonHandler(Button saloonButton, Button kitchenButton, Button bedRoomButton, Button kidRoomButton) {
+    public void buttonHandler(final ArrayList<Button> arrayList) {
 
-        saloonButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                //ViewStub stub = (ViewStub) findViewById(R.id.saloon_stub);
-                Integer saloon = R.id.x;
-                View view = findViewById(R.id.x);
-                checkViewStubArray("saloon", saloon, view);
-            }
-        });
+        for (int i = 0; i < arrayList.size(); i++) {
+            arrayList.get(i).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    // got the room's name from the database
+                    String name = database.getRoomText(String.valueOf(v.getId()));
 
-        kitchenButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                //ViewStub stub = (ViewStub) findViewById(R.id.kitchen1);
-                Integer kitchen = R.id.kitchen;
-                View view = findViewById(R.id.kitchen);
-                checkViewStubArray("kitchen", kitchen, view);
-            }
-        });
+                    // in this section: plug, heater and lamp status for room will be get.
+                    database.getDeviceName(v.getId(), 1); // plug
+                    Iterator entries = plugNamesArray.listIterator();
+                    int j = 0;
+                    while (entries.hasNext()) {
+                        String plugName = plugNamesArray.get(j).toString();
+                        createButton("", R.id.sample, plugName, false, 31);
+                        j++;
+                    }
+                    int k = 0;
+                    database.getDeviceName(v.getId(), 2); // heater
+                    Iterator entries2 = heaterNamesArray.listIterator();
+                    while (entries2.hasNext()) {
+                        String plugName = heaterNamesArray.get(k).toString();
+                        createButton("", R.id.sample, plugName, false, 31);
+                        k++;
+                    }
 
-        bedRoomButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Integer bedroom = R.id.bedroom;
-                View view = findViewById(R.id.bedroom);
-                checkViewStubArray("living_room", bedroom, view);
-            }
-        });
-
-        kidRoomButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Integer kidroom = R.id.kidRoom;
-                View view = findViewById(R.id.kidRoom);
-                checkViewStubArray("kidroom", kidroom, view);
-            }
-        });
+                    int l = 0;
+                    database.getDeviceName(v.getId(), 3); // lamp
+                    Iterator entries3 = lampNamesArray.listIterator();
+                    while (entries3.hasNext()) {
+                        String plugName = lampNamesArray.get(l).toString();
+                        createButton("", R.id.sample, plugName, false, 31);
+                        l++;
+                    }
+                    //checkViewStubArray(name, v.getId(), v);
+                }
+            });
+        }
     }
 
     public HashMap<String, Integer> addViewStubArray(String name, Integer i) {
@@ -147,7 +222,7 @@ public class Room extends Activity {
         Iterator entries = user.entrySet().iterator();
         //System.out.println("Clicked layouts are:" + user.size());
         View view = findViewById(i);
-        View view1 = findViewById(R.id.kitchen);
+        View view1 = findViewById(R.id.sample);
 
         if (!entries.hasNext()) {
             view1.setVisibility(View.GONE);
@@ -163,7 +238,7 @@ public class Room extends Activity {
 
             if (key.equals(name) && value.equals(i)) {
 
-                Toast.makeText(getApplicationContext(), "You are already in : " + key, Toast.LENGTH_SHORT).show();
+                Toast.makeText(getApplicationContext(), getString(R.string.already) + key, Toast.LENGTH_SHORT).show();
                 //System.out.println("Not First Click");
                 System.out.println(user.entrySet());
                 view.setVisibility(View.GONE);
@@ -182,41 +257,44 @@ public class Room extends Activity {
         return user;
     }
 
+    public void createButton(String key, int linearLayoutId, String text, Boolean room, int index) {
+        LinearLayout linearLayout = (LinearLayout) findViewById(linearLayoutId);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.MATCH_PARENT);
+        params.leftMargin = 50;
+        generatedButtonId = View.generateViewId();
+        Button button = new Button(new ContextThemeWrapper(context, R.style.circle_texts), null, 0);
+        button.setBackgroundResource(R.drawable.circle);
+        button.setId(View.generateViewId());
+        if (room) {
+            //text = database.getRoomText(String.valueOf(j));
+        }
+        button.setText(text);
+        button.setGravity(17);
+        button.setLayoutParams(params);
+        linearLayout.addView(button);
+        //database.setLayoutId(generatedButtonId, name);
+        if (room) {
+            roomArrayList.add((Button) findViewById(generatedButtonId));
+        } else {
+            deviceArrayList.add((Button) findViewById(generatedButtonId));
+        }
+    }
+
     private BroadcastReceiver myBroadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             say++;
             String action;
-
-            if (say < 4) {
-                final LinearLayout ll = (LinearLayout) findViewById(R.id.linearLayout);
-                final Button btn = new Button(getApplicationContext());
-                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
-                btn.setText("new_button");
-                btn.setId(R.id.melih_butonu);
-                btn.setBackgroundResource(R.drawable.circle);
-                btn.setLayoutParams(params);
-                ll.addView(btn);
-
-                Button x = (Button) findViewById(R.id.melih_butonu);
-                x.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        System.out.println("bana tıkladılar abi");
-                    }
-                });
-            }
             action = intent.getAction();
-            System.out.println("the ACTION is that:" + action);
 
             switch (0) {
                 default:
-                    if (action.equals("polling guncellemesi")) {
+                    if (action.equals("polling_update")) {
                         try {
                             JSONObject jsonObject;
-                            jsonObject = new JSONObject(intent.getStringExtra("melih"));
-                            Toast.makeText(getApplication(), "masdad", Toast.LENGTH_SHORT).show();
+                            jsonObject = new JSONObject(intent.getStringExtra("data"));
+                            Toast.makeText(getApplication(), "polling data", Toast.LENGTH_SHORT).show();
                             Button button = (Button) findViewById(R.id.kitchenTextView);
                             SharedPreferences mPrefs = getSharedPreferences("rooms", MODE_PRIVATE);
                             SharedPreferences.Editor ed = mPrefs.edit();
@@ -224,6 +302,15 @@ public class Room extends Activity {
                             ed.putString("room1", jsonObject.getString("key"));
                             ed.apply();
 
+                            /*final LinearLayout ly = (LinearLayout) findViewById(R.id.linearLayout);
+                            Button btn = new Button (getApplicationContext());
+                            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams
+                                    (LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
+                            btn.setText(jsonObject.getString("key"));
+                            btn.setId(R.id.checkbox);
+                            btn.setBackgroundResource(R.drawable.circle);
+                            btn.setLayoutParams(params);
+                            ly.addView(btn);*/
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
@@ -254,10 +341,7 @@ public class Room extends Activity {
         registerReceiver(myBroadcastReceiver, myIntentFilter);
     }
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-        unregisterReceiver(myBroadcastReceiver);
+    public void getPolllingUpdate(int type, LinkedHashMap linkedHashMap) {
+        // this function will get the data from the mios and operate according to it.
     }
 }
-

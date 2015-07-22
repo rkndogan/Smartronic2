@@ -11,6 +11,7 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
@@ -18,7 +19,6 @@ import android.util.Base64;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.Window;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -41,7 +41,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.logging.Handler;
 
 public class MainActivity extends ActionBarActivity {
 
@@ -49,84 +48,107 @@ public class MainActivity extends ActionBarActivity {
     EditText ed2;
     Button loginButton;
     TextView txt;
-    LinkedHashMap<String, String> URLMap = new LinkedHashMap<>();
-    String username, password, encodedUsername;
+    LinkedHashMap<String, StringBuilder> URLMap = new LinkedHashMap<>();
+    String registeredUsername, username, password, encodedUsername;
+
     String salt = "oZ7QE6LcLJp6fiWzdqZc";
     String errorFormat = "";
     Boolean error = false;
     String selectedOption;
-    String MyPREFERENCES = "cachedMemory";
     String InternalIp = "";
     String serverDevice = "";
     String serverRelay = "";
-    JSONObject identityToken;
+    String identityToken;
     int responseCode = 0;
     Context context;
-    Boolean isstoped = false;
-    private Handler handler;
+    Boolean isStopped = false;
+    String type = "";
+    boolean indexAccess = false;
 
-    String URLLogin = "https://vera-us-oem-autha.mios.com/autha/auth/username/";
-    String getTheDevices = "https://vera-us-oem-authd.mios.com/locator/locator/";
-    String requestToGateway = "https://vera-us-oem-device11.mios.com/device/device/device/";
-    String CommandURL = "http://ragip.info/Controller/index_melih.php";
-    String usingRelayServer = "/device/device/device/";
-    String sessionKeyServer = "/relay/relay/relay/device/";
-    String mmsSession = "/info/session/token";
-    String verifyURL = "/authd/auth/provision";
+    //String URLLogin = "https://vera-us-oem-autha.mios.com/autha/auth/username/";
+    //String getTheDevices = "https://vera-us-oem-authd.mios.com/locator/locator/";
+    //String requestToGateway = "https://vera-us-oem-device11.mios.com/device/device/device/";
+    String CommandURL = "http://";
+    //String usingRelayServer = "device/device/device/";
+    //String sessionKeyServer = "relay/relay/relay/device/";
+    //String mmsSession = "/info/session/token";
+    //String verifyURL = "/authd/auth/provision";
 
-    BroadcastReceiver myBroadcastReceiver;
+    LinkedHashMap<String, String> postData = new LinkedHashMap<>();
+
+    int say = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         registerBroadcastReceiver();
-        new CheckConnection(getApplicationContext());
-        System.out.println(new ReceiveBroadcastMessage());
+        Methods methods = new Methods(getApplicationContext());
+        final Database database = new Database(getApplicationContext());
+
+        registeredUsername = "burak";
+
+
+        methods.createSPreferences(getString(R.string.predefined_variables), getApplicationContext());
+        methods.updateSPreferences("Server_Autha", getString(R.string.server_autha),
+                getString(R.string.predefined_variables), getApplicationContext());
+        methods.updateSPreferences("Server_Autha_Alt", getString(R.string.server_autha_alt),
+                getString(R.string.predefined_variables), getApplicationContext());
+        methods.updateSPreferences("Server_Authd", getString(R.string.server_authd),
+                getString(R.string.predefined_variables), getApplicationContext());
+        methods.updateSPreferences("Server_Authd_Alt", getString(R.string.server_authd_alt),
+                getString(R.string.predefined_variables), getApplicationContext());
+        methods.updateSPreferences("AppKey", "",
+                getString(R.string.predefined_variables), getApplicationContext());
+        methods.updateSPreferences("PK_Oem", "",
+                getString(R.string.predefined_variables), getApplicationContext());
+
+        //new CheckConnection(getApplicationContext());
 
         //PK_Device and HWKey will be checked here whether they have been stored or not.
-        /*if ((methods.getSPreferences(MyPREFERENCES, "PK_Device", getApplicationContext()) == null ||
-                methods.getSPreferences(MyPREFERENCES, "PK_Device", getApplicationContext()) == "") &&
-                (methods.getSPreferences(MyPREFERENCES, "HWKey", getApplicationContext()) == null ||
-                        methods.getSPreferences(MyPREFERENCES, "PK_Device", getApplicationContext()) == "")) {
+        if ((methods.getSPreferences(getString(R.string.preferences_initial), "PK_Device", getApplicationContext()) == null ||
+                methods.getSPreferences(getString(R.string.preferences_initial), "PK_Device", getApplicationContext()) == "") &&
+                (methods.getSPreferences(getString(R.string.preferences_initial), "HWKey", getApplicationContext()) == null ||
+                        methods.getSPreferences(getString(R.string.preferences_initial), "PK_Device", getApplicationContext()) == "")) {
 
             // call request to get PK_Device and HWKey
             // And store them on sharedPreferences
 
-            String response = methods.handleURLConnections("us-authd11.mios.com" + verifyURL, null, "3", "PUT", getApplicationContext());
+            String response = methods.handleURLConnections(getString(R.string.server_authd)
+                    + getString(R.string.verifyURL), null, 3, "PUT", getApplicationContext(), 0);
 
             String PK_Device = "";
             String HWKey = "";
 
             try {
                 JSONObject jsonArray = new JSONObject(response);
-                PK_Device = (String) jsonArray.get("PK_Device");
-                HWKey = (String) jsonArray.get("HWKey");
+                PK_Device = (String) jsonArray.get(getString(R.string.pk_device));
+                HWKey = (String) jsonArray.get(getString(R.string.hw_key));
             } catch (JSONException e) {
                 e.printStackTrace();
             }
 
-            methods.updateSPreferences("PK_Device", PK_Device, MyPREFERENCES, getApplicationContext());
-            methods.updateSPreferences("HWKey", HWKey, MyPREFERENCES, getApplicationContext());
-        }*/
+            methods.updateSPreferences(getString(R.string.pk_device), PK_Device, getString(R.string.preferences_initial), getApplicationContext());
+            methods.updateSPreferences(getString(R.string.hw_key), HWKey, getString(R.string.preferences_initial), getApplicationContext());
+        }
         context = getApplicationContext();
 
-        String fontPath = "fonts/Walkway_Oblique_SemiBold.ttf";
-
-        URLMap.put("1", URLLogin);
-        URLMap.put("2", getTheDevices);
-        URLMap.put("3", requestToGateway);
-        URLMap.put("4", CommandURL);
-        URLMap.put("5", usingRelayServer);
-        URLMap.put("6", sessionKeyServer);
-        URLMap.put("7", mmsSession);
+        URLMap.put("1", new StringBuilder(getString(R.string.URLLogin)));
+        URLMap.put("2", new StringBuilder(getString(R.string.getTheDevices)));
+        URLMap.put("3", new StringBuilder(getString(R.string.requestToGateway)));
+        URLMap.put("4", new StringBuilder(CommandURL));
+        URLMap.put("5", new StringBuilder(getString(R.string.usingRelayServer)));
+        URLMap.put("6", new StringBuilder(getString(R.string.sessionKeyServer)));
+        URLMap.put("7", new StringBuilder(getString(R.string.mmsSession)));
 
         loginButton = (Button) findViewById(R.id.LoginButton);
         ed1 = (EditText) findViewById(R.id.UsernameEditText);
         ed2 = (EditText) findViewById(R.id.PasswordEditText);
         txt = (TextView) findViewById(R.id.forgot_text);
 
-        Typeface tf = Typeface.createFromAsset(getAssets(), fontPath);
+        //ed1.setText(methods.getSPreferences(getString(R.string.preferences_initial), getString(R.string.username), getApplicationContext()));
+
+        Typeface tf = Typeface.createFromAsset(getAssets(), getString(R.string.font_path));
         ed1.setTypeface(tf);
         ed2.setTypeface(tf);
         loginButton.setTypeface(tf);
@@ -137,19 +159,25 @@ public class MainActivity extends ActionBarActivity {
             @Override
             public void onClick(View v) {
 
-                cachedMemoryVariables("x", "y", "z", "t", "u", "i", "m");
+                // this method call is very controversial
+                //cachedMemoryVariables("x", "y", "z", "t", "u", "i", "m");
 
-                username = ed1.getText().toString();
                 password = ed2.getText().toString();
+                username = ed1.getText().toString();
 
-                if ((username.matches("") && username == null) || (password.matches("") && password == null)) {
-                    errorFormat += "username is wrong";
+                if (username.matches("") || username == null) {
+                    errorFormat += "Username is empty";
                     error = true;
                 }
 
-                /*if(!Functions.isEmailValid(username)){
-                    errorFormat += "Wrong username format\n";
-                    error=true;
+                if (password.matches("") || password == null) {
+                    errorFormat += "Password is empty";
+                    error = true;
+                }
+
+                /*if (!database.loginCheck(password, username)) {
+                    errorFormat += "Login is incorrect";
+                    error = true;
                 }*/
 
                 if (error) {
@@ -167,9 +195,6 @@ public class MainActivity extends ActionBarActivity {
                     alertDialog.show();
                 } else {
                     new LoginCheck().execute();
-                    Intent intnt = new Intent(getApplicationContext(), Index.class);
-                    startActivity(intnt);
-                    Toast.makeText(getApplicationContext(), "oldu ya la", Toast.LENGTH_LONG).show();
                 }
             }
         });
@@ -197,7 +222,7 @@ public class MainActivity extends ActionBarActivity {
                 startActivity(intent);
             } else {
                 Context context = getApplicationContext();
-                Toast toast = Toast.makeText(context, "an error occurred!", Toast.LENGTH_SHORT);
+                Toast toast = Toast.makeText(context, getString(R.string.an_error), Toast.LENGTH_SHORT);
                 toast.show();
             }
             selectedOption = item.getTitle().toString();
@@ -214,12 +239,28 @@ public class MainActivity extends ActionBarActivity {
     class LoginCheck extends AsyncTask<Void, Void, Void> {
         String itemValue;
         ListView listView;
+        private ProgressDialog progress;
 
-        /*@Override
+        @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            ProgressDialog dialog = ProgressDialog.show(MainActivity.this,"Loading,","Please wait..",true,true,null);
-        }*/
+            //showLoadingDialog();
+        }
+
+        public void showLoadingDialog() {
+            if (progress == null) {
+                progress = new ProgressDialog(MainActivity.this);
+                progress.setTitle(getString(R.string.loading));
+                progress.setMessage(getString(R.string.please_wait));
+            }
+            progress.show();
+        }
+
+        public void dismissLoadingDialog() {
+            if (progress != null && progress.isShowing()) {
+                progress.dismiss();
+            }
+        }
 
         @Override
         protected void onPostExecute(Void aVoid) {
@@ -232,8 +273,6 @@ public class MainActivity extends ActionBarActivity {
 
             //String response = "";
 
-            LinkedHashMap<String, String> postData = new LinkedHashMap<>();
-
             try {
                 // SHA-1 Hashed Password to go to vera
                 String hashedPassword = hashThePassword(password);
@@ -241,65 +280,82 @@ public class MainActivity extends ActionBarActivity {
                 // encoded username will be posted to mios vera
                 encodedUsername = URLEncoder.encode(username, "utf-8");
 
-                URLMap.put("1", URLMap.get("1") + encodedUsername);
-                //URLLogin = URLLogin + encodedUsername;
-                System.out.println(URLLogin);
-
-                //URL url = new URL(URLLogin);
-
-                //URLConnection conn = url.openConnection();
-                //conn.setDoOutput(true);
-
-                //OutputStreamWriter writer = new OutputStreamWriter(conn.getOutputStream());
-
-                postData.put("SHA1Password", hashedPassword);
-                postData.put("PK_Oem", "1");
-                postData.put("AppKey", "2");
-
-                String pk_account = handleURLConnections(URLMap.get("1"), postData, "1");
-                processTheData("1", pk_account);
+                URLMap.put("1", URLMap.get("1").append(encodedUsername));
+                URLMap.put("1", URLMap.get("1").append("?"));
+                System.out.println(URLMap.get("1"));
 
                 postData.clear();
+                postData.put(getString(R.string.sha), hashedPassword);
+                postData.put(getString(R.string.pk_oem), "1");
+                postData.put(getString(R.string.app_key), "");
+                System.out.println(postData);
+                String encodedString = handleURLConnections(URLMap.get("1"), postData, "1", getString(R.string.post));
+                if (responseCode == 200) {
+                    dismissLoadingDialog();
+                    Intent intent = new Intent(getApplicationContext(), Index.class);
+                    startActivity(intent);
+                } else {
+                    //Toast.makeText(context, getString(R.string.gateway_error), Toast.LENGTH_LONG).show();
+                    System.exit(0);
+                }
+                String pk_account = processTheData(1, encodedString);
+                System.out.println("This is the pk_account used for getting details about devices \n" + pk_account);
 
-                postData.put("PK_Account", pk_account);
-                String devices = handleURLConnections(URLMap.get("2"), postData, "1");
-                String PK_Device = processTheData("2", devices);
+                postData.clear();
+                //System.out.println(postData);
 
-                SharedPreferences sharedPreferences = getSharedPreferences(MyPREFERENCES, MODE_PRIVATE);
+                postData.put(getString(R.string.pk_account), pk_account);
+                System.out.println(postData);
+                System.out.println("URL is Here \n" + URLMap.get("2"));
+                String devices = handleURLConnections(URLMap.get("2"), postData, "1", getString(R.string.get));
+
+                System.out.println(devices);
+                String PK_Device = processTheData(2, devices);
+
+                SharedPreferences sharedPreferences = getSharedPreferences(getString(R.string.preferences_initial), MODE_PRIVATE);
                 SharedPreferences.Editor editor = sharedPreferences.edit();
-                editor.putString("LAST_PK_Device", PK_Device);
+                editor.putString(getString(R.string.last_pk_device), PK_Device);
                 editor.apply();
 
                 postData.clear();
 
+                String server_relay_mmsSession = "";
+
                 if (InternalIp.equals("") || InternalIp == null) {
-                    URLMap.put("5", "https://" + serverDevice + URLMap.get("5") + PK_Device);
+                    StringBuilder sb = new StringBuilder("https://");
+                    sb.append(serverDevice);
+                    sb.append(URLMap.get("5"));
+                    sb.append(PK_Device);
+                    URLMap.put("5", sb);
                     postData.put("", "");
-                    String response = handleURLConnections(URLMap.get("5"), postData, "1");
+                    String response = handleURLConnections(URLMap.get("5"), postData, "1", "GET");
                     if (responseCode == 200) {
-                        serverRelay = processTheData("3", response);
+                        serverRelay = processTheData(3, response);
+
+                        postData.clear();
+
+                        StringBuilder stringBuilder = new StringBuilder("https://");
+                        stringBuilder.append(serverRelay);
+                        stringBuilder.append(URLMap.get("7"));
+                        URLMap.put("7", stringBuilder);
+                        postData.put("", "");
+                        String response2 = handleURLConnections(URLMap.get("7"), postData, "2", "GET");
+                        server_relay_mmsSession = processTheData(4, response2);
+
+                        postData.clear();
                     } else {
-                        URLMap.put("4", URLMap.get("4") + PK_Device + "/port_3480");
+                        URLMap.put("4", URLMap.get("4").append(PK_Device).append("/port_3480"));
                     }
                 } else {
                     //Connect Locally
-                    URLMap.put("4", URLMap.get("4") + PK_Device + "/port_3480");
+                    URLMap.put("4", URLMap.get("4").append(InternalIp).append("/port_3480"));
                 }
-
-                postData.clear();
-
-                URLMap.put("7", "https://" + serverRelay + URLMap.get("7"));
-                postData.put("", "");
-                String response = handleURLConnections(URLMap.get("7"), postData, "2");
-                String server_relay_mmsSession = processTheData("4", response);
-
-                postData.clear();
-
-                URLMap.put("6", "https://" + serverRelay + URLMap.get("6") + PK_Device +
+                StringBuilder stringBuilder = new StringBuilder("https://" + serverRelay + URLMap.get("6").toString() + PK_Device +
                         "/session/" + server_relay_mmsSession + "port_3480/");
+                URLMap.put("6", stringBuilder);
                 postData.put("id", "sdata");
-                String dataResponse = handleURLConnections(URLMap.get("6"), postData, "1");
-                String processedDataResponse = processTheData("4", dataResponse);
+                String dataResponse = handleURLConnections(URLMap.get("6"), postData, "1", "GET");
+                String processedDataResponse = processTheData(4, dataResponse);
 
             } catch (Exception e) {
                 e.printStackTrace();
@@ -310,44 +366,51 @@ public class MainActivity extends ActionBarActivity {
         public String hashThePassword(String password) throws NoSuchAlgorithmException {
 
             MessageDigest mDigest = MessageDigest.getInstance("SHA1");
-            byte[] result = mDigest.digest((password + username + salt).getBytes());
-            StringBuffer sb = new StringBuffer();
+            byte[] result = mDigest.digest(("burak" + "smartfire3" + salt).getBytes());
+            StringBuilder stringBuilder = new StringBuilder();
             for (int i = 0; i < result.length; i++) {
-                sb.append(Integer.toString((result[i] & 0xff) + 0x100, 16).substring(1));
+                stringBuilder.append(Integer.toString((result[i] & 0xff) + 0x100, 16).substring(1));
             }
-            return sb.toString();
+            return stringBuilder.toString();
         }
 
-        public String handleURLConnections(String inputUrl, LinkedHashMap linkedHashMap, String headers) {
+        public String handleURLConnections(StringBuilder inputUrl, LinkedHashMap linkedHashMap, String headers, String type) {
 
             String line;
-            String text = "";
+            StringBuilder stringBuilder = new StringBuilder();
+
             switch (headers) {
                 case "1":
                     try {
-
-                        URL url = new URL(inputUrl);
+                        stringBuilder.append(inputUrl);
+                        stringBuilder.append("?");
+                        stringBuilder.append(postDataString(linkedHashMap).toString());
+                        URL url = new URL(stringBuilder.toString());
+                        System.out.println("URL Link is Here \n" + inputUrl.toString());
 
                         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                        conn.setDoOutput(true);
+                        conn.setRequestMethod(type);
+                        conn.setDoOutput(false);
+                        conn.setDoInput(true);
+                        conn.addRequestProperty("Accept", "application/json");
                         conn.connect();
+
+
+                        System.out.println("Post Data String rolls in here \n" + postDataString(linkedHashMap));
                         int responseCode = conn.getResponseCode();
                         System.out.println(responseCode);
                         setResponseCode(responseCode);
 
-                        OutputStreamWriter writer = new OutputStreamWriter(conn.getOutputStream());
-
-                        writer.write(postDataString(linkedHashMap));
-                        writer.flush();
+                        System.out.println("reader a geldi");
 
                         BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                        System.out.println("reader i gecti");
 
                         while ((line = reader.readLine()) != null) {
-                            text += line + "/n";
-                            //printResponse(text);
-                            //getEncodedStringAndDecode(text);
+                            stringBuilder.append(line);
+                            stringBuilder.append("\r\n");
+                            System.out.println(stringBuilder.toString());
                         }
-                        writer.close();
                         reader.close();
 
                     } catch (Exception e) {
@@ -359,22 +422,23 @@ public class MainActivity extends ActionBarActivity {
                     try {
 
                         // this will be used when header is necessary.
-                        URL url = new URL(inputUrl);
+                        URL url = new URL(inputUrl.toString());
 
                         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                         conn.setDoOutput(true);
-                        conn.addRequestProperty("MMSAuth", identityToken.getString("MMSAuth"));
-                        conn.addRequestProperty("MMSAuthSig", identityToken.getString("MMSAuthSig"));
+                        //conn.addRequestProperty("MMSAuth", identityToken.getString("MMSAuth"));
+                        //conn.addRequestProperty("MMSAuthSig", identityToken.getString("MMSAuthSig"));
 
                         OutputStreamWriter writer = new OutputStreamWriter(conn.getOutputStream());
 
-                        writer.write(postDataString(linkedHashMap));
+                        writer.write((postDataString(linkedHashMap)).toString());
                         writer.flush();
 
                         BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
 
                         while ((line = reader.readLine()) != null) {
-                            text += line + "/n";
+                            stringBuilder.append(line);
+                            System.out.println("reader icinde");
                             //printResponse(text);
                             //getEncodedStringAndDecode(text);
                         }
@@ -385,36 +449,69 @@ public class MainActivity extends ActionBarActivity {
                         e.printStackTrace();
                     }
 
+                case "3":
+                    try {
+
+                        URL url = new URL("www.google.com");
+
+                        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                        conn.setDoOutput(true);
+                        conn.connect();
+
+                        System.out.println("Post Data String rolls in here \n" + postDataString(linkedHashMap));
+
+                        BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+
+                        while ((line = reader.readLine()) != null) {
+                            stringBuilder.append(line);
+                            System.out.println(stringBuilder.toString());
+                        }
+                        reader.close();
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    break;
+
             }
-            return text;
+
+
+            return stringBuilder.toString();
         }
 
-        public String processTheData(String type, String text) {
+        public String processTheData(int type, String text) {
 
             String result = "";
+
             switch (type) {
-                case "1":
+                case 1:
                     try {
-                        byte[] decodedBytes = Base64.decode(text, Base64.DEFAULT);
-                        String decodedString = new String(decodedBytes);
-                        JSONObject jsonArray = new JSONObject(decodedString);
-                        setIdentityToken(jsonArray);
-                        return (String) jsonArray.get("PK_Account");
+                        JSONObject jsonArray = new JSONObject(text);
+                        String identityTokenString = (String) jsonArray.get("Identity");
+                        //System.out.println("This is the Identity \n" + identityTokenString);
+
+                        byte[] valueDecoded = Base64.decode(identityTokenString, Base64.DEFAULT);
+                        String decodedString = new String(valueDecoded);
+                        //System.out.println("Decoded value is \n" + decodedString);
+
+                        JSONObject identityToken = new JSONObject(decodedString);
+                        //System.out.println("PK_Account=\n" + identityToken.get(getString(R.string.pk_account)));
+                        return String.valueOf(identityToken.get(getString(R.string.pk_account)));
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
                     break;
-                case "2":
+                case 2:
                     try {
                         return selectGateway(text);
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
                     break;
-                case "3":
+                case 3:
                     try {
                         JSONObject jsonArray = new JSONObject(text);
-                        return (String) jsonArray.get("Server_Relay");
+                        return (String) jsonArray.get(getString(R.string.server_relay));
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
@@ -425,7 +522,7 @@ public class MainActivity extends ActionBarActivity {
             return result;
         }
 
-        private String postDataString(LinkedHashMap<String, String> params) throws UnsupportedEncodingException {
+        private StringBuilder postDataString(LinkedHashMap<String, String> params) throws UnsupportedEncodingException {
             StringBuilder result = new StringBuilder();
             boolean first = true;
             for (Map.Entry<String, String> entry : params.entrySet()) {
@@ -438,8 +535,7 @@ public class MainActivity extends ActionBarActivity {
                 result.append("=");
                 result.append(URLEncoder.encode(entry.getValue(), "UTF-8"));
             }
-            //System.out.println(result);
-            return result.toString();
+            return result;
         }
 
         private String selectGateway(String json) throws JSONException {
@@ -452,9 +548,9 @@ public class MainActivity extends ActionBarActivity {
             final String[] internal_ips = new String[0];
             for (int i = 0; i < jsonArray.length(); i++) {
                 JSONObject jsonObject1 = (JSONObject) jsonArray.get(i);
-                String pk_device = (String) jsonObject1.get("PK_Device");
-                String internal_ip = (String) jsonObject1.get("InternalIp");
-                String server_device = (String) jsonObject1.get("Server_Device");
+                String pk_device = (String) jsonObject1.get(getString(R.string.pk_device));
+                String internal_ip = (String) jsonObject1.get(getString(R.string.internal_ip));
+                String server_device = (String) jsonObject1.get(getString(R.string.server_device));
                 PK_Devices[i] = pk_device;
                 internal_ips[i] = internal_ip;
                 server_devices[i] = server_device;
@@ -479,29 +575,66 @@ public class MainActivity extends ActionBarActivity {
             });
             return itemValue;
         }
+
+        private void remoteOrLocalConnection() {
+
+            String type = getConnectionType();
+            String server_relay_mmsSession = "";
+            String PK_Device = "";
+
+            if (type.equals(getString(R.string.mobile))) {
+                // Connect Remotely
+                StringBuilder stringBuilder = new StringBuilder("https://" + serverDevice + URLMap.get("5").toString() + PK_Device);
+                URLMap.put("5", stringBuilder);
+                postData.put("", "");
+                String response = handleURLConnections(URLMap.get("5"), postData, "1", "GET");
+                if (responseCode == 200) {
+                    serverRelay = processTheData(3, response);
+
+                    postData.clear();
+
+                    StringBuilder stringBuilder2 = new StringBuilder("https://" + serverRelay + URLMap.get("7").toString());
+                    URLMap.put("7", stringBuilder2);
+                    postData.put("", "");
+                    String response2 = handleURLConnections(URLMap.get("7"), postData, "2", "GET");
+                    server_relay_mmsSession = processTheData(4, response2);
+                    StringBuilder stringBuilder1 = new StringBuilder("https://" + serverRelay + URLMap.get("6") + PK_Device +
+                            "/session/" + server_relay_mmsSession + "port_3480/");
+                    URLMap.put("6", stringBuilder1);
+                    postData.put("id", "sdata");
+                    String dataResponse = handleURLConnections(URLMap.get("6"), postData, "1", "GET");
+                    String processedDataResponse = processTheData(4, dataResponse);
+
+                    postData.clear();
+                } else {
+                    StringBuilder stringBuilder1 = new StringBuilder(URLMap.get("4") + PK_Device + "/port_3480");
+                    URLMap.put("4", stringBuilder1);
+                }
+            } else if (type.equals(getString(R.string.wifi))) {
+                // Connect via InternalIp
+                StringBuilder stringBuilder = new StringBuilder(URLMap.get("4") + InternalIp + "/port_3480");
+                URLMap.put("4", stringBuilder);
+
+                StringBuilder stringBuilder1 = new StringBuilder("https://" + serverRelay + URLMap.get("6") + PK_Device +
+                        "/session/" + server_relay_mmsSession + "port_3480/");
+
+                URLMap.put("6", stringBuilder1);
+                postData.put("id", "sdata");
+                String dataResponse = handleURLConnections(URLMap.get("6"), postData, "1", "GET");
+                String processedDataResponse = processTheData(4, dataResponse);
+            } else {
+                // No Connection
+                System.out.println("No Connection");
+            }
+
+        }
+
     }
 
     @Override
     protected void onDestroy() {
-        this.isstoped = true;
+        this.isStopped = true;
         super.onDestroy();
-
-    }
-
-
-    public void cachedMemoryVariables(String pk_device, String encodedUsername, String hwkey, String last_ip,
-                                      String last_wifi, String last_engine_connect, String last_pk_device) {
-
-        SharedPreferences sharedpreferences = getSharedPreferences(MyPREFERENCES, Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedpreferences.edit();
-        editor.putString("Username", encodedUsername);
-        editor.putString("PK_Device", pk_device);
-        editor.putString("HWKey", hwkey);
-        editor.putString("LAST_IP", last_ip);
-        editor.putString("LAST_WIFI", last_wifi);
-        editor.putString("LAST_ENGINE_CONNECT", last_engine_connect);
-        editor.putString("LAST_PK_Device", last_pk_device);
-        editor.apply();
 
     }
 
@@ -513,7 +646,7 @@ public class MainActivity extends ActionBarActivity {
         this.serverDevice = serverDevice;
     }
 
-    public void setIdentityToken(JSONObject identityToken) {
+    public void setIdentityToken(String identityToken) {
         this.identityToken = identityToken;
     }
 
@@ -533,5 +666,58 @@ public class MainActivity extends ActionBarActivity {
         IntentFilter myIntentFilter = new IntentFilter();
         myIntentFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
         registerReceiver(myBroadcastReceiver, myIntentFilter);
+    }
+
+    private BroadcastReceiver myBroadcastReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            say++;
+            String action = intent.getAction();
+            //System.out.println("Action of the broadcast message is->>" + action);
+
+            switch (action) {
+                case "android.net.conn.CONNECTIVITY_CHANGE":
+                    ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(context.CONNECTIVITY_SERVICE);
+                    NetworkInfo activeNetwork = connectivityManager.getActiveNetworkInfo();
+                    boolean isConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+                    if (isConnected) {
+                        System.out.println("MAIN ACTIVITY" + activeNetwork.getTypeName());
+                        Toast.makeText(context, activeNetwork.getTypeName(), Toast.LENGTH_LONG).show();
+                        connectionType(activeNetwork.getTypeName());
+                    } else {
+                        System.out.println("MAIN ACTIVITY" + "Not Connected");
+                        Toast.makeText(context, "No Network", Toast.LENGTH_LONG).show();
+                        connectionType("");
+                    }
+                case "polling_update":
+            }
+        }
+    };
+
+    private void connectionType(String type) {
+        // gets the connection type and returns it.
+        // connection
+        this.type = type;
+        LoginCheck loginCheck = new LoginCheck();
+        loginCheck.remoteOrLocalConnection();
+    }
+
+    private String getConnectionType() {
+        return this.type;
+    }
+
+    public void cachedMemoryVariables(String pk_device, String encodedUsername, String hwkey, String last_ip,
+                                      String last_wifi, String last_engine_connect, String last_pk_device) {
+
+        SharedPreferences sharedpreferences = getSharedPreferences(getString(R.string.preferences_initial), Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedpreferences.edit();
+        editor.putString(getString(R.string.username), encodedUsername);
+        editor.putString(getString(R.string.pk_device), pk_device);
+        editor.putString(getString(R.string.hw_key), hwkey);
+        editor.putString(getString(R.string.last_ip), last_ip);
+        editor.putString(getString(R.string.last_wifi), last_wifi);
+        editor.putString(getString(R.string.last_engine_connect), last_engine_connect);
+        editor.putString(getString(R.string.last_pk_device), last_pk_device);
+        editor.apply();
     }
 }

@@ -11,31 +11,30 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
-import java.net.NetworkInterface;
 import java.net.URL;
-import java.net.URLConnection;
 
 import android.os.Handler;
 import android.widget.Toast;
 
 public class Polling extends AsyncTask<String, String, String> {
 
-    String response = "";
+    //String response = "";
     String item = "";
-    String lu_data = "id=lu_sdata";
+    //String lu_data = "id=lu_sdata";
     String text = "";
     Context context;
-    int LoadTime = 0;
-    int DataVersion = 0;
-    int DefaultTimeout = 60;
+    //int LoadTime = 0;
+    //int DataVersion = 0;
+    //int DefaultTimeout = 60;
     int DefaultMinimumDelay = 2000;
     int CurrentMinimumDelay = 0;
-    int CurrentSleep = 2000;
-    int EngineState = -2;
-    int NumFailures = 0;
+    //int CurrentSleep = 2000;
+    //int EngineState = -2;
+    //int NumFailures = 0;
     private Polling poll;
     public Toast toast = null;
-    MainActivity urrr = new MainActivity();
+    MainActivity mainActivity = new MainActivity();
+    Database database = new Database(context);
 
     public Polling(Context c) {
         this.context = c;
@@ -46,11 +45,11 @@ public class Polling extends AsyncTask<String, String, String> {
 
         toast = Toast.makeText(context, s, Toast.LENGTH_SHORT);
         toast.show();
-        Intent myintent = new Intent("polling guncellemesi");
-        myintent.putExtra("melih", s);
-        context.sendBroadcast(myintent);
-        System.out.println(urrr.isstoped);
-        if (!urrr.isstoped) {
+        Intent myIntent = new Intent("polling_update");
+        myIntent.putExtra("data", s);
+        context.sendBroadcast(myIntent);
+        System.out.println(mainActivity.isStopped);
+        if (!mainActivity.isStopped) {
             new Handler().postDelayed(new Runnable() {
                 @Override
                 public void run() {
@@ -58,7 +57,7 @@ public class Polling extends AsyncTask<String, String, String> {
                     poll = new Polling(context);
                     poll.execute();
                 }
-            }, 3000);
+            }, 15000);
 
         }
     }
@@ -68,7 +67,7 @@ public class Polling extends AsyncTask<String, String, String> {
 
 
         try {
-            URL url = new URL(urrr.CommandURL);
+            URL url = new URL(mainActivity.CommandURL);
 
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setDoOutput(true);
@@ -107,8 +106,9 @@ public class Polling extends AsyncTask<String, String, String> {
                     CurrentMinimumDelay=0;
                 }*/
 
-            //If we have data
-            //Parse(data)
+            /*      If we have data
+                    Parse(data)
+                    Send the parsed data to Database     */
 
 
             while ((line = reader.readLine()) != null) {

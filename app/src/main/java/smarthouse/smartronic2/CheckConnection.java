@@ -33,7 +33,7 @@ public class CheckConnection extends BroadcastReceiver {
         boolean isConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
         if (isConnected) {
             System.out.println(activeNetwork.getType());
-            System.out.println(activeNetwork.getTypeName());
+            System.out.println("BURASI ONRECEIVE İÇİ" + activeNetwork.getTypeName());
             System.out.println(activeNetwork.getState());
             type = activeNetwork.getTypeName();
             sendBroadcastMessage(type);
@@ -44,24 +44,11 @@ public class CheckConnection extends BroadcastReceiver {
 
     private void sendBroadcastMessage(String type) {
         // function which broadcasts to all activities the connection type
-        if (type == "") {
-            Toast.makeText(context, "No Network",
-                    Toast.LENGTH_LONG).show();
-            AlertDialog alertDialog = new AlertDialog.Builder(context, 4).create();
-            alertDialog.setTitle("Error");
-            alertDialog.setMessage("Please make sure you are connected to Internet");
-            alertDialog.setCancelable(false);
-            alertDialog.setButton(DialogInterface.BUTTON_POSITIVE, "OK", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
 
-                }
-            });
-
-            // send broadcast message
-            Intent myIntent = new Intent("network_connection_type");
-            myIntent.putExtra("key", type);
-            context.sendBroadcast(myIntent);
-        }
+        // send broadcast message
+        System.out.println("BURAYA BİŞEY GELMİYOR MU ŞİMDİ" + type);
+        Intent myIntent = new Intent("network_connection");
+        myIntent.putExtra("x", String.valueOf(type));
+        context.sendBroadcast(myIntent);
     }
 }

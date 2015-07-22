@@ -21,6 +21,7 @@ public class Index extends ActionBarActivity {
 
     String selectedOption;
     String[] Logout = {"Yes", "No"};
+    Button roomsButton,securityButton,button4,button3,button2,button;
 
     public final static String EXTRA_MESSAGE = "extra message!";
 
@@ -28,6 +29,25 @@ public class Index extends ActionBarActivity {
     protected void onCreate(Bundle onRestoreInstanceState) {
         super.onCreate(onRestoreInstanceState);
         setContentView(R.layout.activity_index);
+
+        String fontPath = "fonts/Walkway_Oblique_Bold.ttf";
+
+        roomsButton = (Button) findViewById(R.id.rooms);
+        securityButton = (Button) findViewById(R.id.security);
+        button4 = (Button) findViewById(R.id.button4);
+        button3 = (Button) findViewById(R.id.button3);
+        button2 = (Button) findViewById(R.id.button2);
+        button = (Button) findViewById(R.id.button);
+
+        Typeface tf = Typeface.createFromAsset(getAssets(), fontPath);
+
+        roomsButton.setTypeface(tf);
+        securityButton.setTypeface(tf);
+        button4.setTypeface(tf);
+        button3.setTypeface(tf);
+        button2.setTypeface(tf);
+        button.setTypeface(tf);
+
     }
 
 

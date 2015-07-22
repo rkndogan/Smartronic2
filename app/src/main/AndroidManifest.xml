@@ -14,7 +14,7 @@
 
     <application
         android:allowBackup="true"
-        android:icon="@drawable/ic_launcher"
+        android:icon="@drawable/abc_popup_background_mtrl_mult"
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
         <activity
